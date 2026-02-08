@@ -242,10 +242,10 @@ export function EmotionDashboard() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Emotion Analytics</h2>
-          <p className="text-muted-foreground mt-1">Track your emotional patterns and mental health insights</p>
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Emotion Analytics</h2>
+          <p className="text-muted-foreground mt-1 text-sm sm:text-base">Track your emotional patterns and mental health insights</p>
         </div>
 
         <div className="flex gap-2">

@@ -44,10 +44,16 @@ export function SessionAnalytics({ conversationId }: SessionAnalyticsProps) {
   const loadAnalytics = async () => {
     try {
       const response = await fetch(`/api/conversations/${conversationId}/analytics`)
+      if (!response.ok) {
+        console.error("Analytics API error:", response.status)
+        setAnalytics(null)
+        return
+      }
       const data = await response.json()
-      setAnalytics(data.analytics)
+      setAnalytics(data.analytics || null)
     } catch (error) {
       console.error("Failed to load analytics:", error)
+      setAnalytics(null)
     } finally {
       setLoading(false)
     }

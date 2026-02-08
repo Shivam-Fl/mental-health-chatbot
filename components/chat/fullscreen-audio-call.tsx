@@ -74,22 +74,22 @@ export function FullscreenAudioCall({ conversationId, onClose }: FullscreenAudio
       </Button>
 
       {/* Main content */}
-      <div className="w-full max-w-md px-6 flex flex-col items-center gap-8">
+      <div className="w-full max-w-md px-4 sm:px-6 flex flex-col items-center gap-6 sm:gap-8 overflow-y-auto max-h-[90vh]">
         {/* Avatar and status */}
-        <div className="flex flex-col items-center gap-4">
+        <div className="flex flex-col items-center gap-3 sm:gap-4">
           <div className={cn(
-            "w-32 h-32 rounded-full flex items-center justify-center transition-all duration-300",
+            "w-24 h-24 sm:w-32 sm:h-32 rounded-full flex items-center justify-center transition-all duration-300",
             isListening 
               ? "bg-gradient-to-br from-green-400 to-blue-500 shadow-2xl shadow-green-500/50 scale-110 animate-pulse" 
               : "bg-gradient-to-br from-primary/30 to-accent/30"
           )}>
-            <div className="w-28 h-28 rounded-full bg-background flex items-center justify-center">
+            <div className="w-20 h-20 sm:w-28 sm:h-28 rounded-full bg-background flex items-center justify-center">
               {isListening ? (
-                <Mic className="h-12 w-12 text-green-500 animate-pulse" />
+                <Mic className="h-8 w-8 sm:h-12 sm:w-12 text-green-500 animate-pulse" />
               ) : isSpeaking ? (
-                <Volume2 className="h-12 w-12 text-blue-500 animate-pulse" />
+                <Volume2 className="h-8 w-8 sm:h-12 sm:w-12 text-blue-500 animate-pulse" />
               ) : (
-                <Phone className="h-12 w-12 text-muted-foreground" />
+                <Phone className="h-8 w-8 sm:h-12 sm:w-12 text-muted-foreground" />
               )}
             </div>
           </div>

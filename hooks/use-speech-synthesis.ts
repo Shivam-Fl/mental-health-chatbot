@@ -11,6 +11,11 @@ interface SpeechSynthesisOptions {
 export function useSpeechSynthesis(options: SpeechSynthesisOptions = {}) {
   const [isSpeaking, setIsSpeaking] = useState(false)
   const synthRef = useRef<SpeechSynthesis | null>(null)
+  const optionsRef = useRef(options)
+
+  useEffect(() => {
+    optionsRef.current = options
+  }, [options])
 
   useEffect(() => {
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
@@ -18,7 +23,9 @@ export function useSpeechSynthesis(options: SpeechSynthesisOptions = {}) {
     }
 
     return () => {
-      stopSpeaking()
+      if (synthRef.current) {
+        synthRef.current.cancel()
+      }
     }
   }, [])
 
@@ -31,7 +38,7 @@ export function useSpeechSynthesis(options: SpeechSynthesisOptions = {}) {
         }
 
         setIsSpeaking(true)
-        options.onStart?.()
+        optionsRef.current.onStart?.()
 
         const utterance = new SpeechSynthesisUtterance(text)
         utterance.rate = 0.9
@@ -49,30 +56,30 @@ export function useSpeechSynthesis(options: SpeechSynthesisOptions = {}) {
 
         utterance.onend = () => {
           setIsSpeaking(false)
-          options.onEnd?.()
+          optionsRef.current.onEnd?.()
           resolve()
         }
 
         utterance.onerror = (event) => {
           setIsSpeaking(false)
           const error = new Error(`Speech synthesis error: ${event.error}`)
-          options.onError?.(error)
+          optionsRef.current.onError?.(error)
           reject(error)
         }
 
         synthRef.current.speak(utterance)
       })
     },
-    [options],
+    [],
   )
 
   const stopSpeaking = useCallback(() => {
     if (synthRef.current) {
       synthRef.current.cancel()
       setIsSpeaking(false)
-      options.onEnd?.()
+      optionsRef.current.onEnd?.()
     }
-  }, [options])
+  }, [])
 
   return {
     isSpeaking,

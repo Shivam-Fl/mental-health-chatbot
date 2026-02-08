@@ -253,7 +253,7 @@ export function FullscreenVideoCall({ conversationId, onClose }: FullscreenVideo
 
       {/* Transcript overlay */}
       {(currentTranscript || aiResponse) && (
-        <div className="absolute bottom-32 left-4 right-4 max-w-2xl mx-auto space-y-2">
+        <div className="absolute bottom-28 sm:bottom-32 left-2 right-2 sm:left-4 sm:right-4 max-w-2xl mx-auto space-y-2">
           {currentTranscript && (
             <Card className="p-3 bg-black/80 backdrop-blur-sm border-blue-500/50 animate-in fade-in-0 slide-in-from-bottom-4">
               <p className="text-sm text-blue-300 mb-1">You:</p>
@@ -270,20 +270,20 @@ export function FullscreenVideoCall({ conversationId, onClose }: FullscreenVideo
       )}
 
       {/* Controls */}
-      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-6">
-        <div className="max-w-2xl mx-auto flex items-center justify-center gap-4">
+      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-4 sm:p-6">
+        <div className="max-w-2xl mx-auto flex items-center justify-center gap-3 sm:gap-4">
           <Button
             onClick={toggleVideo}
             variant="outline"
             size="lg"
             className={cn(
-              "rounded-full w-14 h-14 border-2 transition-all",
+              "rounded-full w-12 h-12 sm:w-14 sm:h-14 border-2 transition-all",
               isVideoEnabled 
                 ? "bg-white/20 border-white/30 text-white hover:bg-white/30" 
                 : "bg-red-500/80 border-red-400 text-white hover:bg-red-500"
             )}
           >
-            {isVideoEnabled ? <Video className="h-5 w-5" /> : <VideoOff className="h-5 w-5" />}
+            {isVideoEnabled ? <Video className="h-4 w-4 sm:h-5 sm:w-5" /> : <VideoOff className="h-4 w-4 sm:h-5 sm:w-5" />}
           </Button>
 
           <Button
@@ -291,21 +291,21 @@ export function FullscreenVideoCall({ conversationId, onClose }: FullscreenVideo
             variant="outline"
             size="lg"
             className={cn(
-              "rounded-full w-14 h-14 border-2 transition-all",
+              "rounded-full w-12 h-12 sm:w-14 sm:h-14 border-2 transition-all",
               isAudioEnabled 
                 ? "bg-white/20 border-white/30 text-white hover:bg-white/30" 
                 : "bg-red-500/80 border-red-400 text-white hover:bg-red-500"
             )}
           >
-            {isAudioEnabled ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}
+            {isAudioEnabled ? <Mic className="h-4 w-4 sm:h-5 sm:w-5" /> : <MicOff className="h-4 w-4 sm:h-5 sm:w-5" />}
           </Button>
 
           <Button
             onClick={handleEndCall}
             size="lg"
-            className="rounded-full w-16 h-16 bg-red-500 hover:bg-red-600 text-white shadow-2xl shadow-red-500/50 hover:scale-105 transition-all"
+            className="rounded-full w-14 h-14 sm:w-16 sm:h-16 bg-red-500 hover:bg-red-600 text-white shadow-2xl shadow-red-500/50 hover:scale-105 transition-all"
           >
-            <PhoneOff className="h-6 w-6" />
+            <PhoneOff className="h-5 w-5 sm:h-6 sm:w-6" />
           </Button>
 
           {isAudioEnabled && isStreaming && (
@@ -314,13 +314,13 @@ export function FullscreenVideoCall({ conversationId, onClose }: FullscreenVideo
               variant="outline"
               size="lg"
               className={cn(
-                "rounded-full w-14 h-14 border-2 transition-all",
+                "rounded-full w-12 h-12 sm:w-14 sm:h-14 border-2 transition-all",
                 isListening
                   ? "bg-red-500/80 border-red-400 text-white hover:bg-red-500 animate-pulse"
                   : "bg-purple-500/80 border-purple-400 text-white hover:bg-purple-500"
               )}
             >
-              {isListening ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
+              {isListening ? <MicOff className="h-4 w-4 sm:h-5 sm:w-5" /> : <Mic className="h-4 w-4 sm:h-5 sm:w-5" />}
             </Button>
           )}
         </div>
