@@ -8,6 +8,7 @@ import { ChatMessages } from "./chat-messages"
 import { ChatInput } from "./chat-input"
 import { ChatHeader } from "./chat-header"
 import { CrisisAlert } from "./crisis-alert"
+import { EmotionTracker } from "../emotion/emotion-tracker"
 import { FullscreenAudioCall } from "./fullscreen-audio-call"
 import { FullscreenVideoCall } from "./fullscreen-video-call"
 import { Button } from "@/components/ui/button"
@@ -354,6 +355,13 @@ export function ChatInterface({ user }: Readonly<ChatInterfaceProps>) {
           {showCrisisAlert && (
             <div className="px-4 py-3 bg-destructive/10 border-b border-destructive/20">
               <CrisisAlert onDismiss={() => setShowCrisisAlert(false)} />
+            </div>
+          )}
+
+          {/* Emotion Tracker */}
+          {currentConversation && !showAnalytics && (
+            <div className="px-4 py-3 border-b border-border bg-card/50">
+              <EmotionTracker conversationId={currentConversation.id} />
             </div>
           )}
 

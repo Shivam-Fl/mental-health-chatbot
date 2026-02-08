@@ -83,6 +83,16 @@ export function useAudioStream(options: AudioStreamOptions = {}) {
   const startListening = useCallback(async () => {
     try {
       setError(null)
+      
+      // Stop any existing recognition first
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop()
+        } catch (e) {
+          // Ignore if already stopped
+        }
+      }
+      
       setIsListening(true)
       options.onStatusChange?.("listening")
 
@@ -90,9 +100,15 @@ export function useAudioStream(options: AudioStreamOptions = {}) {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       streamRef.current = stream
 
-      // Start speech recognition
+      // Start speech recognition with a small delay to ensure previous one stopped
       if (recognitionRef.current) {
-        recognitionRef.current.start()
+        setTimeout(() => {
+          try {
+            recognitionRef.current?.start()
+          } catch (e) {
+            console.log("Recognition start error (may be already started):", e)
+          }
+        }, 100)
       }
 
       // Set up media recorder for backup audio capture

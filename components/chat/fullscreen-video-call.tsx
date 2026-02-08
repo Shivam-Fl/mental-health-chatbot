@@ -79,6 +79,16 @@ export function FullscreenVideoCall({ conversationId, onClose }: FullscreenVideo
     }
   }, [isStreaming])
 
+  // Auto-start video call when modal opens
+  useEffect(() => {
+    if (!isStreaming) {
+      // Small delay to allow modal to render
+      setTimeout(() => {
+        toggleStreaming()
+      }, 500)
+    }
+  }, [])
+
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60)
     const secs = seconds % 60
