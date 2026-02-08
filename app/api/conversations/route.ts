@@ -1,8 +1,8 @@
-import { createServerClient } from "@/lib/supabase/server"
+import { createClient } from "@/lib/supabase/server"
 import { type NextRequest, NextResponse } from "next/server"
 
 export async function GET(request: NextRequest) {
-  const supabase = createServerClient()
+  const supabase = await createClient()
   const { searchParams } = new URL(request.url)
   const search = searchParams.get("search")
   const limit = Number.parseInt(searchParams.get("limit") || "20")
@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const supabase = createServerClient()
+  const supabase = await createClient()
   const { title, summary } = await request.json()
 
   const {

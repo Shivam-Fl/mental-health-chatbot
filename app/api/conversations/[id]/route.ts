@@ -1,8 +1,8 @@
-import { createServerClient } from "@/lib/supabase/server"
+import { createClient } from "@/lib/supabase/server"
 import { type NextRequest, NextResponse } from "next/server"
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
-  const supabase = createServerClient()
+  const supabase = await createClient()
   const conversationId = params.id
 
   const {
@@ -31,7 +31,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 }
 
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
-  const supabase = createServerClient()
+  const supabase = await createClient()
   const conversationId = params.id
   const { title, summary, notes } = await request.json()
 
@@ -64,7 +64,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 }
 
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
-  const supabase = createServerClient()
+  const supabase = await createClient()
   const conversationId = params.id
 
   const {
