@@ -80,7 +80,7 @@ export function useAudioStream(options: AudioStreamOptions = {}) {
                 if (isListeningRef.current && recognitionRef.current) {
                   recognitionRef.current.start()
                 }
-              }, 100)
+              }, 200)
             } catch (e) {
               console.log("Recognition restart failed:", e)
             }
