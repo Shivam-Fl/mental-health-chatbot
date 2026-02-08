@@ -1,8 +1,8 @@
-import { createServerClient } from "@/lib/supabase/server"
+import { createClient } from "@/lib/supabase/server"
 import { type NextRequest, NextResponse } from "next/server"
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
-  const supabase = createServerClient()
+  const supabase = await createClient()
   const conversationId = params.id
 
   const {
@@ -40,12 +40,12 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
     // Emotion trends over time
     const emotionTrends = emotions
-      .map((emotion) => ({
+      .map((emotion: any) => ({
         timestamp: emotion.created_at,
         emotion: emotion.primary_emotion,
         confidence: emotion.confidence_score,
       }))
-      .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+      .sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
 
     // Topic analysis (simplified - in production you'd use NLP)
     const topicKeywords = [
@@ -59,19 +59,19 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
     const topicAnalysis = topicKeywords
       .map(({ topic, keywords }) => {
-        const messageText = messages.map((m) => m.content.toLowerCase()).join(" ")
+        const messageText = messages.map((m: any) => m.content.toLowerCase()).join(" ")
         const frequency = keywords.reduce((count, keyword) => {
           const matches = (messageText.match(new RegExp(keyword, "g")) || []).length
           return count + matches
         }, 0)
 
         // Simple sentiment analysis based on emotion data
-        const relatedEmotions = emotions.filter((e) =>
+        const relatedEmotions = emotions.filter((e: any) =>
           keywords.some((keyword) => e.context?.toLowerCase().includes(keyword)),
         )
         const avgSentiment =
           relatedEmotions.length > 0
-            ? relatedEmotions.reduce((sum, e) => sum + (e.confidence_score || 0.5), 0) / relatedEmotions.length
+            ? relatedEmotions.reduce((sum: number, e: any) => sum + (e.confidence_score || 0.5), 0) / relatedEmotions.length
             : 0.5
 
         return {
@@ -85,19 +85,19 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     // Progress metrics (simplified)
     const progressMetrics = {
       copingStrategiesDiscussed: messages.filter(
-        (m) =>
+        (m: any) =>
           m.content.toLowerCase().includes("strategy") ||
           m.content.toLowerCase().includes("cope") ||
           m.content.toLowerCase().includes("technique"),
       ).length,
       insightsGained: messages.filter(
-        (m) =>
+        (m: any) =>
           m.content.toLowerCase().includes("realize") ||
           m.content.toLowerCase().includes("understand") ||
           m.content.toLowerCase().includes("insight"),
       ).length,
       actionItemsIdentified: messages.filter(
-        (m) =>
+        (m: any) =>
           m.content.toLowerCase().includes("will try") ||
           m.content.toLowerCase().includes("plan to") ||
           m.content.toLowerCase().includes("going to"),

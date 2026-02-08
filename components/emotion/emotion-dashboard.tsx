@@ -230,60 +230,73 @@ export function EmotionDashboard() {
   const moodDistribution = getCurrentMoodDistribution()
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Emotion Analytics</h2>
-          <p className="text-muted-foreground">Track your emotional patterns and mental health insights</p>
+          <h2 className="text-3xl font-bold tracking-tight">Emotion Analytics</h2>
+          <p className="text-muted-foreground mt-1">Track your emotional patterns and mental health insights</p>
         </div>
 
         <div className="flex gap-2">
-          <Button variant={timeRange === "week" ? "default" : "outline"} size="sm" onClick={() => setTimeRange("week")}>
+          <Button 
+            variant={timeRange === "week" ? "default" : "outline"} 
+            size="sm" 
+            onClick={() => setTimeRange("week")}
+            className="rounded-lg"
+          >
             Week
           </Button>
           <Button
             variant={timeRange === "month" ? "default" : "outline"}
             size="sm"
             onClick={() => setTimeRange("month")}
+            className="rounded-lg"
           >
             Month
           </Button>
-          <Button variant={timeRange === "all" ? "default" : "outline"} size="sm" onClick={() => setTimeRange("all")}>
+          <Button 
+            variant={timeRange === "all" ? "default" : "outline"} 
+            size="sm" 
+            onClick={() => setTimeRange("all")}
+            className="rounded-lg"
+          >
             All Time
           </Button>
         </div>
       </div>
 
-      <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="trends">Trends</TabsTrigger>
-          <TabsTrigger value="insights">Insights</TabsTrigger>
+      <Tabs defaultValue="overview" className="space-y-6">
+        <TabsList className="bg-muted/50 p-1">
+          <TabsTrigger value="overview" className="rounded-lg">Overview</TabsTrigger>
+          <TabsTrigger value="trends" className="rounded-lg">Trends</TabsTrigger>
+          <TabsTrigger value="insights" className="rounded-lg">Insights</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview" className="space-y-4">
+        <TabsContent value="overview" className="space-y-6">
           {/* Current Mood Distribution */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card className="border-border shadow-sm">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Heart className="h-5 w-5" />
+                <CardTitle className="flex items-center gap-2 text-xl">
+                  <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
+                    <Heart className="h-5 w-5 text-primary" />
+                  </div>
                   Current Mood Distribution
                 </CardTitle>
                 <CardDescription>Based on your recent interactions</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {moodDistribution.map(({ emotion, count, percentage }) => (
                     <div key={emotion} className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-3">
                         <EmotionIndicator emotion={emotion} />
-                        <span className="text-sm">{count} times</span>
+                        <span className="text-sm font-medium">{count} times</span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Progress value={percentage} className="w-20" />
-                        <span className="text-sm text-muted-foreground">{percentage}%</span>
+                      <div className="flex items-center gap-3">
+                        <Progress value={percentage} className="w-24 h-2" />
+                        <span className="text-sm font-semibold text-muted-foreground w-12 text-right">{percentage}%</span>
                       </div>
                     </div>
                   ))}
@@ -291,27 +304,29 @@ export function EmotionDashboard() {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="border-border shadow-sm">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Activity className="h-5 w-5" />
+                <CardTitle className="flex items-center gap-2 text-xl">
+                  <div className="w-10 h-10 bg-accent/10 rounded-xl flex items-center justify-center">
+                    <Activity className="h-5 w-5 text-accent" />
+                  </div>
                   Emotion Summary
                 </CardTitle>
                 <CardDescription>Key metrics for this {timeRange}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm">Total Interactions</span>
-                    <Badge variant="outline">{emotionData.length}</Badge>
+                  <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
+                    <span className="text-sm font-medium">Total Interactions</span>
+                    <Badge variant="outline" className="text-base font-semibold">{emotionData.length}</Badge>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm">Most Common Emotion</span>
+                  <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
+                    <span className="text-sm font-medium">Most Common Emotion</span>
                     <EmotionIndicator emotion={moodDistribution[0]?.emotion || "neutral"} />
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm">Positive Emotions</span>
-                    <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/20">
+                  <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
+                    <span className="text-sm font-medium">Positive Emotions</span>
+                    <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/20 text-base font-semibold">
                       {Math.round((moodDistribution.find((m) => m.emotion === "joy")?.percentage || 0) * 100) / 100}%
                     </Badge>
                   </div>
@@ -321,44 +336,56 @@ export function EmotionDashboard() {
           </div>
         </TabsContent>
 
-        <TabsContent value="trends" className="space-y-4">
-          <Card>
+        <TabsContent value="trends" className="space-y-6">
+          <Card className="border-border shadow-sm">
             <CardHeader>
-              <CardTitle>Mood Trends Over Time</CardTitle>
+              <CardTitle className="text-xl">Mood Trends Over Time</CardTitle>
               <CardDescription>Track how your emotions change over time</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={moodTrends}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis />
-                    <Tooltip />
-                    <Line type="monotone" dataKey="joy" stroke="#22c55e" strokeWidth={2} />
-                    <Line type="monotone" dataKey="anxiety" stroke="#f59e0b" strokeWidth={2} />
-                    <Line type="monotone" dataKey="depression" stroke="#3b82f6" strokeWidth={2} />
-                    <Line type="monotone" dataKey="stress" stroke="#ef4444" strokeWidth={2} />
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis dataKey="date" className="text-xs" />
+                    <YAxis className="text-xs" />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: 'hsl(var(--card))',
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px'
+                      }}
+                    />
+                    <Line type="monotone" dataKey="joy" stroke="#22c55e" strokeWidth={2} dot={{ r: 4 }} />
+                    <Line type="monotone" dataKey="anxiety" stroke="#f59e0b" strokeWidth={2} dot={{ r: 4 }} />
+                    <Line type="monotone" dataKey="depression" stroke="#3b82f6" strokeWidth={2} dot={{ r: 4 }} />
+                    <Line type="monotone" dataKey="stress" stroke="#ef4444" strokeWidth={2} dot={{ r: 4 }} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-border shadow-sm">
             <CardHeader>
-              <CardTitle>Emotion Frequency</CardTitle>
+              <CardTitle className="text-xl">Emotion Frequency</CardTitle>
               <CardDescription>How often each emotion appears</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="h-60">
+              <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={moodDistribution}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="emotion" />
-                    <YAxis />
-                    <Tooltip />
-                    <Bar dataKey="count" fill="#8884d8" />
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis dataKey="emotion" className="text-xs" />
+                    <YAxis className="text-xs" />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: 'hsl(var(--card))',
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px'
+                      }}
+                    />
+                    <Bar dataKey="count" fill="hsl(var(--primary))" radius={[8, 8, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -366,11 +393,13 @@ export function EmotionDashboard() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="insights" className="space-y-4">
-          <Card>
+        <TabsContent value="insights" className="space-y-6">
+          <Card className="border-border shadow-sm">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Brain className="h-5 w-5" />
+              <CardTitle className="flex items-center gap-2 text-xl">
+                <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
+                  <Brain className="h-5 w-5 text-primary" />
+                </div>
                 AI-Generated Insights
               </CardTitle>
               <CardDescription>Personalized observations about your emotional patterns</CardDescription>
@@ -379,23 +408,30 @@ export function EmotionDashboard() {
               <ScrollArea className="h-96">
                 <div className="space-y-4">
                   {insights.length === 0 ? (
-                    <p className="text-muted-foreground text-center py-8">
-                      Not enough data yet. Continue using the chatbot to generate insights.
-                    </p>
+                    <div className="text-center py-12">
+                      <div className="w-16 h-16 bg-muted/50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                        <Brain className="w-8 h-8 text-muted-foreground" />
+                      </div>
+                      <p className="text-muted-foreground">
+                        Not enough data yet. Continue using the chatbot to generate insights.
+                      </p>
+                    </div>
                   ) : (
                     insights.map((insight, index) => (
-                      <Card key={index} className="border-l-4 border-l-primary">
-                        <CardContent className="pt-4">
-                          <div className="flex items-start gap-3">
-                            {getInsightIcon(insight.type)}
+                      <Card key={index} className="border-l-4 border-l-primary shadow-sm">
+                        <CardContent className="pt-6">
+                          <div className="flex items-start gap-4">
+                            <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center shrink-0">
+                              {getInsightIcon(insight.type)}
+                            </div>
                             <div className="flex-1">
-                              <h4 className="font-semibold text-sm">{insight.title}</h4>
-                              <p className="text-sm text-muted-foreground mt-1">{insight.description}</p>
-                              <div className="flex items-center gap-2 mt-2">
-                                <Badge variant="outline" className="text-xs">
+                              <h4 className="font-semibold text-base mb-2">{insight.title}</h4>
+                              <p className="text-sm text-muted-foreground leading-relaxed mb-3">{insight.description}</p>
+                              <div className="flex items-center gap-2">
+                                <Badge variant="outline" className="text-xs font-medium">
                                   {Math.round(insight.confidence * 100)}% confidence
                                 </Badge>
-                                <Badge variant="outline" className="text-xs capitalize">
+                                <Badge variant="outline" className="text-xs capitalize font-medium">
                                   {insight.type}
                                 </Badge>
                               </div>

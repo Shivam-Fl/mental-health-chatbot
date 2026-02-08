@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Brain, User } from "lucide-react"
+import { Brain, User, Shield } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { EmotionIndicator } from "./emotion-indicator"
 
@@ -37,17 +37,20 @@ export function ChatMessages({ messages }: ChatMessagesProps) {
 
   if (messages.length === 0) {
     return (
-      <div className="h-full flex items-center justify-center">
-        <div className="text-center max-w-md mx-auto p-6">
-          <Brain className="h-16 w-16 text-primary mx-auto mb-4 opacity-50" />
-          <h3 className="text-lg font-semibold mb-2">Welcome to MindfulAI</h3>
-          <p className="text-muted-foreground text-sm leading-relaxed">
-            I&apos;m here to provide compassionate mental health support. You can share your thoughts through text,
+      <div className="h-full flex items-center justify-center p-8">
+        <div className="text-center max-w-md mx-auto">
+          <div className="w-20 h-20 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
+            <Brain className="h-10 w-10 text-primary" />
+          </div>
+          <h3 className="text-2xl font-semibold mb-3">Welcome to Aura</h3>
+          <p className="text-muted-foreground text-base leading-relaxed mb-6">
+            I&apos;m here to provide compassionate mental health support. Share your thoughts through text,
             voice, or video. Everything you share is private and secure.
           </p>
-          <p className="text-xs text-muted-foreground mt-4">
-            Start by typing a message below or click the microphone for voice chat.
-          </p>
+          <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+            <Shield className="w-4 h-4" />
+            <span>Your conversations are confidential</span>
+          </div>
         </div>
       </div>
     )
@@ -55,45 +58,50 @@ export function ChatMessages({ messages }: ChatMessagesProps) {
 
   return (
     <ScrollArea className="h-full" ref={scrollAreaRef}>
-      <div className="p-4 space-y-6">
+      <div className="p-6 space-y-6 max-w-4xl mx-auto">
         {messages.map((message) => (
           <div
             key={message.id}
-            className={cn("flex gap-3 max-w-4xl", message.role === "user" ? "ml-auto flex-row-reverse" : "mr-auto")}
+            className={cn("flex gap-4", message.role === "user" ? "ml-auto flex-row-reverse" : "mr-auto")}
           >
-            <Avatar className="h-8 w-8 shrink-0">
+            <Avatar className="h-10 w-10 shrink-0 border-2 border-border">
               <AvatarFallback
                 className={cn(
-                  "text-xs",
+                  "text-xs font-medium",
                   message.role === "user"
                     ? "bg-primary text-primary-foreground"
-                    : "bg-secondary text-secondary-foreground",
+                    : "bg-accent text-accent-foreground",
                 )}
               >
-                {message.role === "user" ? <User className="h-4 w-4" /> : <Brain className="h-4 w-4" />}
+                {message.role === "user" ? <User className="h-5 w-5" /> : <Brain className="h-5 w-5" />}
               </AvatarFallback>
             </Avatar>
 
             <div
               className={cn(
-                "flex flex-col gap-1 min-w-0 flex-1",
+                "flex flex-col gap-2 min-w-0 max-w-[75%]",
                 message.role === "user" ? "items-end" : "items-start",
               )}
             >
               <div
                 className={cn(
-                  "rounded-2xl px-4 py-3 max-w-[80%] break-words",
-                  message.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground",
+                  "rounded-2xl px-5 py-3 break-words shadow-sm",
+                  message.role === "user" 
+                    ? "bg-primary text-primary-foreground rounded-tr-sm" 
+                    : "bg-muted text-foreground rounded-tl-sm border border-border",
                 )}
               >
                 <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
               </div>
 
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground px-1">
                 <span>{formatTime(message.created_at)}</span>
                 {message.message_type !== "text" && <span className="capitalize">• {message.message_type}</span>}
                 {message.emotion_detected && message.emotion_detected !== "neutral" && (
-                  <EmotionIndicator emotion={message.emotion_detected} />
+                  <>
+                    <span>•</span>
+                    <EmotionIndicator emotion={message.emotion_detected} />
+                  </>
                 )}
               </div>
             </div>

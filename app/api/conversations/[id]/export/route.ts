@@ -1,8 +1,8 @@
-import { createServerClient } from "@/lib/supabase/server"
+import { createClient } from "@/lib/supabase/server"
 import { type NextRequest, NextResponse } from "next/server"
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
-  const supabase = createServerClient()
+  const supabase = await createClient()
   const conversationId = params.id
   const { searchParams } = new URL(request.url)
   const format = searchParams.get("format") || "json"
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   if (format === "pdf") {
     // Generate PDF export
     const pdfContent = generatePDFContent(conversation)
-    return new NextResponse(pdfContent, {
+    return new NextResponse(Buffer.from(pdfContent), {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename="conversation-${conversationId}.pdf"`,
@@ -83,8 +83,8 @@ function generateTextContent(conversation: any): string {
   return content
 }
 
-function generatePDFContent(conversation: any): Buffer {
+function generatePDFContent(conversation: any): string {
   // In a real implementation, you'd use a PDF library like jsPDF or Puppeteer
-  // For now, return a simple text buffer
-  return Buffer.from(generateTextContent(conversation))
+  // For now, return a simple text content
+  return generateTextContent(conversation)
 }
