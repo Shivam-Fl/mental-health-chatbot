@@ -54,104 +54,82 @@ export function ChatInput({ onSendMessage, conversationId }: Readonly<ChatInputP
 
 
   return (
-    <div className="bg-gradient-to-r from-white/95 to-blue-50/95 dark:from-slate-900/95 dark:to-blue-950/95 backdrop-blur-sm border-t border-border/50">
+    <div className="bg-card border-t border-border">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <div className="px-4 pt-4">
-          <TabsList className="grid w-full grid-cols-3 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border border-border/50 shadow-lg">
+        <div className="px-6 pt-4">
+          <TabsList className="grid w-full grid-cols-3 bg-muted/50 p-1">
             <TabsTrigger 
               value="text" 
-              className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-600 data-[state=active]:text-white transition-all duration-300 hover:scale-105"
+              className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-lg transition-all"
             >
               <MessageSquare className="h-4 w-4" />
-              <span className="font-medium">Text Chat</span>
+              <span className="hidden sm:inline">Text</span>
             </TabsTrigger>
             <TabsTrigger 
               value="audio" 
-              className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-blue-600 data-[state=active]:text-white transition-all duration-300 hover:scale-105"
+              className="flex items-center gap-2 data-[state=active]:bg-accent data-[state=active]:text-accent-foreground rounded-lg transition-all"
             >
               <Mic className="h-4 w-4" />
-              <span className="font-medium">Voice Chat</span>
+              <span className="hidden sm:inline">Voice</span>
             </TabsTrigger>
             <TabsTrigger 
               value="video" 
-              className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-600 data-[state=active]:text-white transition-all duration-300 hover:scale-105"
+              className="flex items-center gap-2 data-[state=active]:bg-accent data-[state=active]:text-accent-foreground rounded-lg transition-all"
             >
               <Video className="h-4 w-4" />
-              <span className="font-medium">Video Call</span>
+              <span className="hidden sm:inline">Video</span>
             </TabsTrigger>
           </TabsList>
         </div>
 
-        <TabsContent value="text" className="p-6 mt-0">
-          <div className="bg-gradient-to-br from-blue-50/80 to-purple-50/80 dark:from-blue-950/30 dark:to-purple-950/30 rounded-xl p-6 border border-blue-200/50 dark:border-blue-800/50 shadow-lg backdrop-blur-sm">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
-              <span className="text-sm font-medium text-blue-700 dark:text-blue-300">Text Chat Mode</span>
-            </div>
-            <form onSubmit={handleSubmit} className="flex items-end gap-4">
-              <div className="flex-1 relative">
-                <Textarea
-                  ref={textareaRef}
-                  value={message}
-                  onChange={handleTextareaChange}
-                  onKeyDown={handleKeyDown}
-                  placeholder="Share what's on your mind... I'm here to listen and support you."
-                  className="min-h-[50px] max-h-[120px] resize-none pr-14 bg-white/90 dark:bg-slate-800/90 border-2 border-blue-200 dark:border-blue-800 focus:border-blue-400 dark:focus:border-blue-600 focus:ring-4 focus:ring-blue-200/50 dark:focus:ring-blue-800/50 transition-all duration-300 rounded-xl"
-                />
-              </div>
-
-              <Button
-                type="submit"
-                size="lg"
-                disabled={!message.trim()}
-                className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-110 rounded-xl px-6 py-3"
-              >
-                <Send className="h-5 w-5 mr-2" />
-                Send
-              </Button>
-            </form>
-
-            <div className="mt-4 text-center">
-              <p className="text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30 rounded-lg py-2 px-4">
-                💬 Your conversations are private and secure. This AI provides support but is not a replacement for
-                professional therapy.
-              </p>
-            </div>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="audio" className="p-6 mt-0">
-          <div className="bg-gradient-to-br from-green-50/80 to-blue-50/80 dark:from-green-950/30 dark:to-blue-950/30 rounded-xl p-6 border border-green-200/50 dark:border-green-800/50 shadow-lg backdrop-blur-sm">
-            <div className="text-center mb-6">
-              <div className="flex items-center justify-center gap-2 mb-3">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                <span className="text-sm font-medium text-green-700 dark:text-green-300">Voice Chat Mode</span>
-              </div>
-              <p className="text-sm text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950/30 rounded-lg py-2 px-4">
-                🎤 Speak naturally - I'll listen and respond with voice
-              </p>
-            </div>
-            <AudioControls onTranscriptReceived={handleAudioTranscript} conversationId={conversationId} />
-          </div>
-        </TabsContent>
-
-        <TabsContent value="video" className="p-4 mt-0">
-          <div className="bg-gradient-to-br from-purple-50/80 to-pink-50/80 dark:from-purple-950/30 dark:to-pink-950/30 rounded-xl p-4 border border-purple-200/50 dark:border-purple-800/50 shadow-lg backdrop-blur-sm">
-            <div className="text-center mb-4">
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse" />
-                <span className="text-sm font-medium text-purple-700 dark:text-purple-300">Video Call Mode</span>
-              </div>
-              <p className="text-xs text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/30 rounded-lg py-2 px-3">
-                📹 Face-to-face conversation with emotion analysis and voice response
-              </p>
-            </div>
-            <div className="max-h-[70vh] overflow-y-auto">
-              <VideoCall
-                conversationId={conversationId}
-                onSendMessage={onSendMessage}
+        <TabsContent value="text" className="p-6 mt-0 space-y-3">
+          <form onSubmit={handleSubmit} className="flex items-end gap-3">
+            <div className="flex-1 relative">
+              <Textarea
+                ref={textareaRef}
+                value={message}
+                onChange={handleTextareaChange}
+                onKeyDown={handleKeyDown}
+                placeholder="Share what's on your mind... I'm here to listen."
+                className="min-h-[60px] max-h-[120px] resize-none pr-14 bg-muted/50 border-2 border-input focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all rounded-xl text-base"
               />
             </div>
+
+            <Button
+              type="submit"
+              size="lg"
+              disabled={!message.trim()}
+              className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-md hover:shadow-lg transition-all rounded-xl h-[60px] px-6"
+            >
+              <Send className="h-5 w-5" />
+            </Button>
+          </form>
+
+          <p className="text-xs text-center text-muted-foreground">
+            Your conversations are private and secure
+          </p>
+        </TabsContent>
+
+        <TabsContent value="audio" className="p-6 mt-0 space-y-4">
+          <div className="text-center mb-4">
+            <p className="text-sm text-muted-foreground">
+              🎤 Speak naturally - I'll listen and respond with voice
+            </p>
+          </div>
+          <AudioControls onTranscriptReceived={handleAudioTranscript} conversationId={conversationId} />
+        </TabsContent>
+
+        <TabsContent value="video" className="p-6 mt-0 space-y-4">
+          <div className="text-center mb-4">
+            <p className="text-sm text-muted-foreground">
+              📹 Face-to-face conversation with emotion analysis
+            </p>
+          </div>
+          <div className="max-h-[60vh] overflow-y-auto">
+            <VideoCall
+              conversationId={conversationId}
+              onSendMessage={onSendMessage}
+            />
           </div>
         </TabsContent>
 

@@ -337,11 +337,11 @@ export function ChatInterface({ user }: Readonly<ChatInterfaceProps>) {
   }
 
   return (
-    <div className="h-screen flex bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-blue-950">
+    <div className="h-screen flex bg-background">
       {/* Mobile sidebar overlay */}
       {isSidebarOpen && (
         <div 
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm" 
+          className="fixed inset-0 bg-black/60 z-40 lg:hidden backdrop-blur-sm" 
           onClick={() => setIsSidebarOpen(false)}
           onKeyDown={(e) => e.key === 'Escape' && setIsSidebarOpen(false)}
           role="button"
@@ -352,8 +352,8 @@ export function ChatInterface({ user }: Readonly<ChatInterfaceProps>) {
       {/* Sidebar */}
       <div
         className={`
-        fixed lg:relative inset-y-0 left-0 z-50 w-80 bg-card/95 backdrop-blur-xl border-r border-border/50
-        transform transition-all duration-300 ease-in-out lg:translate-x-0 shadow-xl
+        fixed lg:relative inset-y-0 left-0 z-50 w-80 bg-card border-r border-border
+        transform transition-all duration-300 ease-in-out lg:translate-x-0 shadow-lg lg:shadow-none
         ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}
       `}
       >
@@ -371,24 +371,24 @@ export function ChatInterface({ user }: Readonly<ChatInterfaceProps>) {
       </div>
 
         {/* Main chat area */}
-        <div className="flex-1 flex flex-col min-w-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
+        <div className="flex-1 flex flex-col min-w-0 bg-background">
           <ChatHeader
             currentConversation={currentConversation}
             onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
           />
 
           {currentConversation && (
-            <div className="px-4 py-3 border-b border-border/50 bg-gradient-to-r from-blue-50/50 to-purple-50/50 dark:from-blue-950/20 dark:to-purple-950/20">
+            <div className="px-6 py-4 border-b border-border bg-card/50">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                   <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                  <span className="text-sm font-medium text-muted-foreground">Active Session</span>
+                  <span className="text-sm font-medium text-foreground">Active Session</span>
                 </div>
                 <Button 
                   variant="outline" 
                   size="sm" 
                   onClick={() => setShowAnalytics(!showAnalytics)} 
-                  className="bg-white/80 hover:bg-white dark:bg-slate-800/80 dark:hover:bg-slate-800 shadow-sm"
+                  className="rounded-lg"
                 >
                   <BarChart3 className="h-4 w-4 mr-2" />
                   {showAnalytics ? "Hide Analytics" : "Show Analytics"}
@@ -399,30 +399,30 @@ export function ChatInterface({ user }: Readonly<ChatInterfaceProps>) {
 
           {/* Crisis Alert */}
           {showCrisisAlert && (
-            <div className="p-4 bg-red-50 dark:bg-red-950/20 border-b border-red-200 dark:border-red-800">
+            <div className="p-4 bg-destructive/10 border-b border-destructive/20">
               <CrisisAlert onDismiss={() => setShowCrisisAlert(false)} />
             </div>
           )}
 
           {showAnalytics && currentConversation ? (
-            <div className="flex-1 overflow-y-auto p-6 bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-800 dark:to-blue-900">
+            <div className="flex-1 overflow-y-auto p-6 bg-muted/30">
               <SessionAnalytics conversationId={currentConversation.id} />
             </div>
           ) : (
             <>
               {currentConversation && (
-                <div className="px-4 py-3 bg-gradient-to-r from-green-50/50 to-blue-50/50 dark:from-green-950/20 dark:to-blue-950/20 border-b border-border/50">
+                <div className="px-6 py-3 bg-accent/5 border-b border-border">
                   <EmotionTracker conversationId={currentConversation.id} />
                 </div>
               )}
 
               {/* Messages */}
-              <div className="flex-1 overflow-hidden bg-gradient-to-br from-white/90 to-blue-50/30 dark:from-slate-900/90 dark:to-blue-950/30">
+              <div className="flex-1 overflow-hidden bg-background">
                 <ChatMessages messages={messages} />
               </div>
 
               {/* Input */}
-              <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm border-t border-border/50">
+              <div className="bg-card border-t border-border">
                 <ChatInput onSendMessage={sendMessage} conversationId={currentConversation?.id} />
               </div>
             </>
