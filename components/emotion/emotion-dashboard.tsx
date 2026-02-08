@@ -68,23 +68,33 @@ export function EmotionDashboard() {
           break
       }
 
-      // Fetch emotion analysis data
-      const { data: emotions, error } = await supabase
-        .from("emotion_analysis")
-        .select("*")
+      // Fetch emotion data from messages table (which has emotion_detected field)
+      const { data: messages, error } = await supabase
+        .from("messages")
+        .select("id, emotion_detected, created_at, role")
+        .not("emotion_detected", "is", null)
         .gte("created_at", startDate.toISOString())
         .order("created_at", { ascending: true })
 
       if (error) throw error
 
-      setEmotionData(emotions || [])
+      // Map messages to emotion data format
+      const emotions: EmotionData[] = (messages || [])
+        .filter((m) => m.emotion_detected && m.emotion_detected !== "supportive")
+        .map((m) => ({
+          emotion_type: m.emotion_detected,
+          confidence: 0.8,
+          created_at: m.created_at,
+        }))
+
+      setEmotionData(emotions)
 
       // Process data for trends
-      const trends = processMoodTrends(emotions || [])
+      const trends = processMoodTrends(emotions)
       setMoodTrends(trends)
 
       // Generate insights
-      const generatedInsights = generateInsights(emotions || [])
+      const generatedInsights = generateInsights(emotions)
       setInsights(generatedInsights)
     } catch (error) {
       console.error("Error loading emotion data:", error)

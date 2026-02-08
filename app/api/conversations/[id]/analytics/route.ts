@@ -14,13 +14,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   }
 
   try {
-    // Get conversation with messages and emotion analyses
+    // Get conversation with messages
     const { data: conversation, error: convError } = await supabase
       .from("conversations")
       .select(`
         *,
-        messages(*),
-        emotion_analyses(*)
+        messages(*)
       `)
       .eq("id", conversationId)
       .eq("user_id", user.id)
@@ -30,20 +29,20 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     // Calculate analytics
     const messages = conversation.messages || []
-    const emotions = conversation.emotion_analyses || []
 
     // Basic metrics
     const totalMessages = messages.length
     const sessionStart = new Date(conversation.created_at)
     const sessionEnd = new Date(conversation.updated_at)
-    const sessionDuration = Math.round((sessionEnd.getTime() - sessionStart.getTime()) / (1000 * 60)) // minutes
+    const sessionDuration = Math.max(1, Math.round((sessionEnd.getTime() - sessionStart.getTime()) / (1000 * 60))) // minutes, at least 1
 
-    // Emotion trends over time
-    const emotionTrends = emotions
-      .map((emotion: any) => ({
-        timestamp: emotion.created_at,
-        emotion: emotion.primary_emotion,
-        confidence: emotion.confidence_score,
+    // Emotion trends from messages' emotion_detected field
+    const emotionTrends = messages
+      .filter((m: any) => m.emotion_detected && m.emotion_detected !== "neutral")
+      .map((m: any) => ({
+        timestamp: m.created_at,
+        emotion: m.emotion_detected,
+        confidence: 0.8, // Default confidence for text-based detection
       }))
       .sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
 
@@ -65,13 +64,14 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           return count + matches
         }, 0)
 
-        // Simple sentiment analysis based on emotion data
-        const relatedEmotions = emotions.filter((e: any) =>
-          keywords.some((keyword) => e.context?.toLowerCase().includes(keyword)),
+        // Simple sentiment analysis based on message emotions
+        const relatedMessages = messages.filter((m: any) =>
+          m.emotion_detected && keywords.some((keyword) => m.content?.toLowerCase().includes(keyword)),
         )
+        const positiveEmotions = ["joy", "supportive", "neutral"]
         const avgSentiment =
-          relatedEmotions.length > 0
-            ? relatedEmotions.reduce((sum: number, e: any) => sum + (e.confidence_score || 0.5), 0) / relatedEmotions.length
+          relatedMessages.length > 0
+            ? relatedMessages.reduce((sum: number, m: any) => sum + (positiveEmotions.includes(m.emotion_detected) ? 0.8 : 0.3), 0) / relatedMessages.length
             : 0.5
 
         return {

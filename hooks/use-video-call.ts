@@ -32,6 +32,12 @@ export function useVideoCall(options: VideoCallOptions = {}) {
   const isManuallyStoppedRef = useRef(false)
   const speechTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const lastTranscriptTimeRef = useRef<number>(0)
+  const optionsRef = useRef(options)
+
+  // Keep options ref in sync
+  useEffect(() => {
+    optionsRef.current = options
+  }, [options])
 
   // Initialize speech recognition (like audio mode - on demand)
   useEffect(() => {
@@ -65,7 +71,7 @@ export function useVideoCall(options: VideoCallOptions = {}) {
           
           // Only process if we have meaningful content
           if (fullTranscript.trim().length > 0) {
-            options.onTranscript?.(fullTranscript, isFinal)
+            optionsRef.current.onTranscript?.(fullTranscript, isFinal)
           }
         }
 
@@ -76,17 +82,21 @@ export function useVideoCall(options: VideoCallOptions = {}) {
 
         recognitionRef.current.onerror = (event) => {
           console.error("Speech recognition error:", event.error)
-          setIsListening(false)
-          setIsManualListening(false)
           
           if (event.error === "not-allowed") {
             console.error("Microphone access denied")
             setError("Microphone access denied. Please allow microphone access and try again.")
+            setIsListening(false)
+            setIsManualListening(false)
           } else if (event.error === "no-speech") {
-            console.log("No speech detected")
-            setError("No speech detected. Please try again.")
+            console.log("No speech detected - this is normal")
+            // Don't set error for no-speech - it's expected
+            setIsListening(false)
+            setIsManualListening(false)
           } else if (event.error === "aborted") {
             console.log("Speech recognition aborted")
+            setIsListening(false)
+            setIsManualListening(false)
           }
         }
 
@@ -133,7 +143,7 @@ export function useVideoCall(options: VideoCallOptions = {}) {
       setError(null)
       setIsStreaming(true)
       isStreamingRef.current = true
-      options.onStatusChange?.("connecting")
+      optionsRef.current.onStatusChange?.("connecting")
 
       // Check if media devices are available
       if (!navigator.mediaDevices?.getUserMedia) {
@@ -171,7 +181,7 @@ export function useVideoCall(options: VideoCallOptions = {}) {
         })
       }
 
-      options.onStatusChange?.("streaming")
+      optionsRef.current.onStatusChange?.("streaming")
 
       // Don't start speech recognition automatically - user will click to speak
 
@@ -206,8 +216,8 @@ export function useVideoCall(options: VideoCallOptions = {}) {
       setError(errorMessage)
       setIsStreaming(false)
       isStreamingRef.current = false
-      options.onError?.(new Error(errorMessage))
-      options.onStatusChange?.("idle")
+      optionsRef.current.onError?.(new Error(errorMessage))
+      optionsRef.current.onStatusChange?.("idle")
     }
   }, [isVideoEnabled, isAudioEnabled])
 
@@ -215,7 +225,7 @@ export function useVideoCall(options: VideoCallOptions = {}) {
     console.log("Stopping video call")
     setIsStreaming(false)
     isStreamingRef.current = false
-    options.onStatusChange?.("idle")
+    optionsRef.current.onStatusChange?.("idle")
 
     // Stop speech recognition
     if (recognitionRef.current) {
@@ -339,7 +349,7 @@ export function useVideoCall(options: VideoCallOptions = {}) {
 
     try {
       setIsProcessing(true)
-      options.onStatusChange?.("processing")
+      optionsRef.current.onStatusChange?.("processing")
 
       const canvas = canvasRef.current
       const video = videoRef.current
@@ -368,17 +378,17 @@ export function useVideoCall(options: VideoCallOptions = {}) {
       if (emotion.emotion && emotion.confidence > 0.1) {
         setCurrentEmotion(emotion.emotion)
         setEmotionConfidence(emotion.confidence)
-        options.onEmotionDetected?.(emotion.emotion, emotion.confidence)
+        optionsRef.current.onEmotionDetected?.(emotion.emotion, emotion.confidence)
         console.log("Emotion detected:", emotion.emotion, "confidence:", emotion.confidence)
       }
       
       // Surface analysis to consumers
-      options.onVisualAnalysis?.(emotion)
+      optionsRef.current.onVisualAnalysis?.(emotion)
     } catch (error) {
       console.error("Error analyzing frame:", error)
     } finally {
       setIsProcessing(false)
-      options.onStatusChange?.(isStreamingRef.current ? "streaming" : "idle")
+      optionsRef.current.onStatusChange?.(isStreamingRef.current ? "streaming" : "idle")
     }
   }, [isVideoEnabled])
 
