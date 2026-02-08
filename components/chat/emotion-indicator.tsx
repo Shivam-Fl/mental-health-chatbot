@@ -16,7 +16,7 @@ const emotionConfig = {
   stress: { icon: AlertTriangle, color: "bg-orange-500/10 text-orange-600 border-orange-500/20", label: "Stress" },
   confusion: { icon: HelpCircle, color: "bg-purple-500/10 text-purple-600 border-purple-500/20", label: "Confusion" },
   crisis: { icon: Heart, color: "bg-red-600/10 text-red-700 border-red-600/20", label: "Crisis" },
-  neutral: { icon: Minus, color: "bg-gray-500/10 text-gray-600 border-gray-500/20", label: "Neutral" },
+  neutral: { icon: Minus, color: "bg-muted text-muted-foreground border-border", label: "Neutral" },
 }
 
 export function EmotionIndicator({ emotion, className }: EmotionIndicatorProps) {

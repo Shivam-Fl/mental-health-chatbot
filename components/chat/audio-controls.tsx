@@ -42,7 +42,7 @@ export function AudioControls({ onTranscriptReceived, conversationId }: AudioCon
       case "speaking":
         return { text: "Speaking...", color: "bg-purple-500/10 text-purple-600 border-purple-500/20" }
       default:
-        return { text: "Ready", color: "bg-gray-500/10 text-gray-600 border-gray-500/20" }
+        return { text: "Ready", color: "bg-muted text-muted-foreground border-border" }
     }
   }
 
@@ -58,7 +58,7 @@ export function AudioControls({ onTranscriptReceived, conversationId }: AudioCon
               "bg-green-500 animate-pulse": status === "listening",
               "bg-blue-500 animate-spin": status === "processing",
               "bg-purple-500 animate-pulse": status === "speaking",
-              "bg-gray-500": status === "idle",
+              "bg-muted-foreground": status === "idle",
             })}
           />
           {statusInfo.text}

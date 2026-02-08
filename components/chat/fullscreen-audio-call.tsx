@@ -108,7 +108,7 @@ export function FullscreenAudioCall({ conversationId, onClose }: FullscreenAudio
                   isListening && "bg-green-500 animate-pulse",
                   isSpeaking && "bg-blue-500 animate-pulse",
                   isProcessing && "bg-yellow-500 animate-spin",
-                  !isListening && !isSpeaking && !isProcessing && "bg-gray-500"
+                  !isListening && !isSpeaking && !isProcessing && "bg-muted-foreground"
                 )} />
                 {isListening ? "Listening" : isSpeaking ? "Speaking" : isProcessing ? "Processing" : "Ready"}
               </Badge>
@@ -130,7 +130,7 @@ export function FullscreenAudioCall({ conversationId, onClose }: FullscreenAudio
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-1">You said:</p>
-                <p className="text-gray-700 dark:text-gray-300 break-words">{currentTranscript}</p>
+                <p className="text-foreground break-words">{currentTranscript}</p>
               </div>
             </div>
           </Card>
@@ -145,7 +145,7 @@ export function FullscreenAudioCall({ conversationId, onClose }: FullscreenAudio
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-green-800 dark:text-green-200 mb-1">Aura:</p>
-                <p className="text-gray-700 dark:text-gray-300 break-words">{aiResponse}</p>
+                <p className="text-foreground break-words">{aiResponse}</p>
               </div>
             </div>
           </Card>

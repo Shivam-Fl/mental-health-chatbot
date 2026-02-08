@@ -92,7 +92,7 @@ export function EmotionTracker({ conversationId }: EmotionTrackerProps) {
       case "declining":
         return <TrendingDown className="h-4 w-4 text-red-600" />
       default:
-        return <Minus className="h-4 w-4 text-gray-600" />
+        return <Minus className="h-4 w-4 text-muted-foreground" />
     }
   }
 
@@ -103,7 +103,7 @@ export function EmotionTracker({ conversationId }: EmotionTrackerProps) {
       case "declining":
         return "bg-red-500/10 text-red-600 border-red-500/20"
       default:
-        return "bg-gray-500/10 text-gray-600 border-gray-500/20"
+        return "bg-muted text-muted-foreground border-border"
     }
   }
 

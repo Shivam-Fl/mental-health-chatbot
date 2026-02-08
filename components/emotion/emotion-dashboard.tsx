@@ -215,7 +215,7 @@ export function EmotionDashboard() {
       case "recommendation":
         return <Brain className="h-4 w-4 text-purple-600" />
       default:
-        return <Heart className="h-4 w-4 text-gray-600" />
+        return <Heart className="h-4 w-4 text-muted-foreground" />
     }
   }
 
