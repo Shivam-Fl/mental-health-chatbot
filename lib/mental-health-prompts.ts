@@ -117,7 +117,11 @@ export async function analyzeEmotion({
   // Import GoogleGenerativeAI dynamically to avoid issues
   const { GoogleGenerativeAI } = await import("@google/generative-ai")
   
-  const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || "AIzaSyD6IDQNHh8VHmFa-4YmRSRlWz6T00_k_Lc")
+  if (!process.env.GOOGLE_API_KEY) {
+    throw new Error("GOOGLE_API_KEY environment variable is not set")
+  }
+  
+  const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY)
   const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" })
 
   // Enhanced prompt based on emotion and context

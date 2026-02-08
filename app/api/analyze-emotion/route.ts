@@ -1,7 +1,14 @@
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import { z } from "zod"
+import { createClient } from "@/lib/supabase/server"
+import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit"
+import { logSecurityEvent } from "@/lib/security"
 
-const genAI = new GoogleGenerativeAI("AIzaSyD6IDQNHh8VHmFa-4YmRSRlWz6T00_k_Lc")
+if (!process.env.GOOGLE_API_KEY) {
+  throw new Error("GOOGLE_API_KEY environment variable is not set")
+}
+
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY)
 
 const emotionAnalysisSchema = z.object({
   emotion: z.enum(["joy", "sadness", "anger", "fear", "surprise", "disgust", "neutral", "anxiety", "stress"]),
@@ -18,6 +25,45 @@ const emotionAnalysisSchema = z.object({
 export async function POST(req: Request) {
   try {
     console.log("[DEBUG] Emotion analysis API called")
+    
+    // Authentication check
+    const supabase = await createClient()
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    
+    if (userError || !user) {
+      logSecurityEvent({
+        type: 'unauthorized_access',
+        details: 'Emotion analysis API accessed without authentication'
+      })
+      return Response.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      )
+    }
+
+    // Rate limiting
+    const rateLimitResult = checkRateLimit(`user:${user.id}`, RATE_LIMITS.emotion)
+    
+    if (!rateLimitResult.allowed) {
+      logSecurityEvent({
+        type: 'rate_limit',
+        userId: user.id,
+        details: 'Emotion analysis API rate limit exceeded'
+      })
+      return Response.json(
+        { 
+          error: "Too many requests",
+          retryAfter: rateLimitResult.retryAfter 
+        },
+        { 
+          status: 429,
+          headers: {
+            'Retry-After': rateLimitResult.retryAfter?.toString() || '60',
+          }
+        }
+      )
+    }
+    
     const { image } = await req.json()
 
     if (!image) {

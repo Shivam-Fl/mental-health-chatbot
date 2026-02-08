@@ -1,14 +1,12 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Inter } from "next/font/google"
+import { GeistSans } from "geist/font/sans"
 import "./globals.css"
 
-const inter = Inter({ subsets: ["latin"] })
-
 export const metadata: Metadata = {
-  title: "MindfulAI - Mental Health Support Chatbot",
-  description: "AI-powered mental health support with text, audio, and video capabilities",
-    generator: 'v0.app'
+  title: "Aura - Mental Health Support Chatbot",
+  description: "Professional AI-powered mental health support with text, audio, and video capabilities. Your safe space for emotional wellness.",
+  generator: 'v0.app'
 }
 
 export default function RootLayout({
@@ -18,7 +16,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="dark">
-      <body className={inter.className}>{children}</body>
+      <body className={GeistSans.className}>{children}</body>
     </html>
   )
 }
