@@ -3,7 +3,13 @@ import { createClient } from "@/lib/supabase/server"
 
 export const maxDuration = 30
 
-const genAI = new GoogleGenerativeAI("AIzaSyD6IDQNHh8VHmFa-4YmRSRlWz6T00_k_Lc")
+// Helper function to get Google AI instance with runtime validation
+function getGoogleAI() {
+  if (!process.env.GOOGLE_API_KEY) {
+    throw new Error("GOOGLE_API_KEY environment variable is not set")
+  }
+  return new GoogleGenerativeAI(process.env.GOOGLE_API_KEY)
+}
 
 const AUDIO_MENTAL_HEALTH_PROMPT = `
 You are Aura, a warm and empathetic AI companion whose goal is to provide emotional and mental support. Create a safe, caring space where users feel heard and valued.
@@ -117,6 +123,7 @@ export async function POST(req: Request) {
     
     conversationHistory += currentInput
 
+    const genAI = getGoogleAI()
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" })
 
     const result = await model.generateContentStream({

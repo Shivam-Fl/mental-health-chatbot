@@ -4,11 +4,13 @@ import { createClient } from "@/lib/supabase/server"
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit"
 import { logSecurityEvent } from "@/lib/security"
 
-if (!process.env.GOOGLE_API_KEY) {
-  throw new Error("GOOGLE_API_KEY environment variable is not set")
+// Helper function to get Google AI instance with runtime validation
+function getGoogleAI() {
+  if (!process.env.GOOGLE_API_KEY) {
+    throw new Error("GOOGLE_API_KEY environment variable is not set")
+  }
+  return new GoogleGenerativeAI(process.env.GOOGLE_API_KEY)
 }
-
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY)
 
 const emotionAnalysisSchema = z.object({
   emotion: z.enum(["joy", "sadness", "anger", "fear", "surprise", "disgust", "neutral", "anxiety", "stress"]),
@@ -72,6 +74,7 @@ export async function POST(req: Request) {
     }
 
     console.log("[DEBUG] Image received, length:", image.length)
+    const genAI = getGoogleAI()
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" })
 
     const prompt = `Analyze this facial image for emotional state and mental health indicators. Focus on:

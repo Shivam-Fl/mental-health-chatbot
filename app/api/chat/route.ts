@@ -5,12 +5,13 @@ import { sanitizeInput, isValidMessageContent, logSecurityEvent } from "@/lib/se
 
 export const maxDuration = 30
 
-// Initialize Google AI with environment variable
-if (!process.env.GOOGLE_API_KEY) {
-  throw new Error("GOOGLE_API_KEY environment variable is not set")
+// Helper function to get Google AI instance with runtime validation
+function getGoogleAI() {
+  if (!process.env.GOOGLE_API_KEY) {
+    throw new Error("GOOGLE_API_KEY environment variable is not set")
+  }
+  return new GoogleGenerativeAI(process.env.GOOGLE_API_KEY)
 }
-
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY)
 
 // Mental health specialized system prompt
 const MENTAL_HEALTH_SYSTEM_PROMPT = `
@@ -147,6 +148,7 @@ Assistant:
 
     conversationHistory += enhancedPrompt
 
+    const genAI = getGoogleAI()
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" })
 
     const result = await model.generateContentStream({
