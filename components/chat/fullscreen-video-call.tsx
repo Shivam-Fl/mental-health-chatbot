@@ -13,11 +13,16 @@ interface FullscreenVideoCallProps {
   onClose: () => void
 }
 
+interface VisualAnalysis {
+  raw_expressions?: any
+  [key: string]: any
+}
+
 export function FullscreenVideoCall({ conversationId, onClose }: FullscreenVideoCallProps) {
   const [status, setStatus] = useState<"idle" | "connecting" | "streaming" | "processing">("idle")
   const [currentTranscript, setCurrentTranscript] = useState("")
   const [isSpeaking, setIsSpeaking] = useState(false)
-  const [lastVisualAnalysis, setLastVisualAnalysis] = useState<any>(null)
+  const [lastVisualAnalysis, setLastVisualAnalysis] = useState<VisualAnalysis | null>(null)
   const [aiResponse, setAiResponse] = useState("")
   const [lastProcessedTranscript, setLastProcessedTranscript] = useState("")
   const [isProcessingRequest, setIsProcessingRequest] = useState(false)
@@ -43,8 +48,9 @@ export function FullscreenVideoCall({ conversationId, onClose }: FullscreenVideo
     onTranscript: (transcript, isFinal) => {
       setCurrentTranscript(transcript)
       
-      if (isFinal && transcript.trim() && transcript.trim().length > 2 && transcript.trim() !== lastProcessedTranscript) {
-        setLastProcessedTranscript(transcript.trim())
+      const trimmedTranscript = transcript.trim()
+      if (isFinal && trimmedTranscript && trimmedTranscript.length > 2 && trimmedTranscript !== lastProcessedTranscript) {
+        setLastProcessedTranscript(trimmedTranscript)
         processVideoInteraction(transcript, currentEmotion, emotionConfidence)
         setTimeout(() => setCurrentTranscript(""), 1000)
       }
@@ -142,7 +148,7 @@ export function FullscreenVideoCall({ conversationId, onClose }: FullscreenVideo
     } finally {
       setIsProcessingRequest(false)
     }
-  }, [conversationId, currentEmotion, emotionConfidence, lastVisualAnalysis, isProcessingRequest])
+  }, [conversationId, lastVisualAnalysis, isProcessingRequest])
 
   const handleEndCall = () => {
     if (isStreaming) {
