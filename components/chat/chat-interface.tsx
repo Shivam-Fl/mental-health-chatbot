@@ -9,10 +9,11 @@ import { ChatInput } from "./chat-input"
 import { ChatHeader } from "./chat-header"
 import { CrisisAlert } from "./crisis-alert"
 import { EmotionTracker } from "../emotion/emotion-tracker"
-import { SessionAnalytics } from "./session-analytics"
+import { FullscreenAudioCall } from "./fullscreen-audio-call"
+import { FullscreenVideoCall } from "./fullscreen-video-call"
 import { Button } from "@/components/ui/button"
-import { BarChart3 } from "lucide-react"
-import { useSpeechSynthesis } from "@/hooks/use-speech-synthesis"
+import { BarChart3, X } from "lucide-react"
+import { SessionAnalytics } from "./session-analytics"
 
 interface Conversation {
   id: string
@@ -44,13 +45,9 @@ export function ChatInterface({ user }: Readonly<ChatInterfaceProps>) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [showCrisisAlert, setShowCrisisAlert] = useState(false)
   const [showAnalytics, setShowAnalytics] = useState(false)
+  const [showAudioCall, setShowAudioCall] = useState(false)
+  const [showVideoCall, setShowVideoCall] = useState(false)
   const supabase = createClient()
-
-  const { speakText } = useSpeechSynthesis({
-    onStart: () => console.log("[v0] TTS started"),
-    onEnd: () => console.log("[v0] TTS ended"),
-    onError: (error) => console.error("[v0] TTS error:", error),
-  })
 
   useEffect(() => {
     loadConversations()
@@ -142,35 +139,25 @@ export function ChatInterface({ user }: Readonly<ChatInterfaceProps>) {
   }
 
   const deleteConversation = async (id: string) => {
-    console.log("[DEBUG] Delete conversation called for ID:", id)
     if (!confirm("Are you sure you want to delete this session? This action cannot be undone.")) {
-      console.log("[DEBUG] Delete cancelled by user")
       return
     }
 
     try {
-      console.log("[DEBUG] Attempting to delete conversation from database")
       const { error } = await supabase.from("conversations").delete().eq("id", id)
       
-      if (error) {
-        console.error("[DEBUG] Database delete error:", error)
-        throw error
-      }
+      if (error) throw error
       
-      console.log("[DEBUG] Database delete successful, updating UI")
       setConversations(conversations.filter((c) => c.id !== id))
 
       if (currentConversation?.id === id) {
-        console.log("[DEBUG] Deleted conversation was current, switching to another")
         const remaining = conversations.filter((c) => c.id !== id)
         if (remaining.length > 0) {
           setCurrentConversation(remaining[0])
         } else {
-          console.log("[DEBUG] No remaining conversations, creating new one")
           await createNewConversation()
         }
       }
-      console.log("[DEBUG] Delete operation completed successfully")
     } catch (error) {
       console.error("Failed to delete conversation:", error)
       alert("Failed to delete conversation. Please try again.")
@@ -199,8 +186,6 @@ export function ChatInterface({ user }: Readonly<ChatInterfaceProps>) {
     if (!currentConversation) return
 
     try {
-      console.log("[v0] Sending message:", { content, messageType, conversationId: currentConversation.id })
-
       // Add user message to UI immediately
       const userMessage: Message = {
         id: `temp-${Date.now()}`,
@@ -260,17 +245,11 @@ export function ChatInterface({ user }: Readonly<ChatInterfaceProps>) {
         body: JSON.stringify(requestBody),
       })
 
-      console.log("[v0] AI API response status:", response.status)
-
       if (!response.ok) {
-        const errorText = await response.text()
-        console.error("[v0] AI API error:", response.status, errorText)
         throw new Error(`Failed to get AI response: ${response.status}`)
       }
 
       const aiResponse = await response.json()
-      console.log("[v0] AI response received:", aiResponse)
-
       const responseContent = aiResponse.content || aiResponse.response || aiResponse.message || "I'm here to help."
 
       // Add AI response to messages
@@ -302,21 +281,13 @@ export function ChatInterface({ user }: Readonly<ChatInterfaceProps>) {
       // Update the temporary AI message with real ID
       setMessages((prev) => prev.map((msg) => (msg.id === assistantMessage.id ? { ...savedAiMessage } : msg)))
 
-      if ((messageType === "video" || messageType === "audio") && responseContent) {
-        try {
-          await speakText(responseContent)
-        } catch (ttsError) {
-          console.error("[v0] TTS error:", ttsError)
-        }
-      }
-
       // Update conversation timestamp
       await supabase
         .from("conversations")
         .update({ updated_at: new Date().toISOString() })
         .eq("id", currentConversation.id)
     } catch (error) {
-      console.error("[v0] Error sending message:", error)
+      console.error("Error sending message:", error)
     }
   }
 
@@ -337,97 +308,123 @@ export function ChatInterface({ user }: Readonly<ChatInterfaceProps>) {
   }
 
   return (
-    <div className="h-screen flex bg-background">
-      {/* Mobile sidebar overlay */}
-      {isSidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black/60 z-40 lg:hidden backdrop-blur-sm" 
-          onClick={() => setIsSidebarOpen(false)}
-          onKeyDown={(e) => e.key === 'Escape' && setIsSidebarOpen(false)}
-          role="button"
-          tabIndex={0}
-        />
-      )}
+    <>
+      <div className="h-screen flex bg-background">
+        {/* Mobile sidebar overlay */}
+        {isSidebarOpen && (
+          <div 
+            className="fixed inset-0 bg-black/60 z-40 lg:hidden backdrop-blur-sm" 
+            onClick={() => setIsSidebarOpen(false)}
+            onKeyDown={(e) => e.key === 'Escape' && setIsSidebarOpen(false)}
+            role="button"
+            tabIndex={0}
+          />
+        )}
 
-      {/* Sidebar */}
-      <div
-        className={`
-        fixed lg:relative inset-y-0 left-0 z-50 w-80 bg-card border-r border-border
-        transform transition-all duration-300 ease-in-out lg:translate-x-0 shadow-lg lg:shadow-none
-        ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}
-      `}
-      >
-        <ChatSidebar
-          conversations={conversations}
-          currentConversation={currentConversation}
-          onSelectConversation={setCurrentConversation}
-          onNewConversation={createNewConversation}
-          onUpdateConversation={updateConversation}
-          onDeleteConversation={deleteConversation}
-          onExportConversation={exportConversation}
-          onLogout={handleLogout}
-          user={user}
-        />
-      </div>
+        {/* Sidebar */}
+        <div
+          className={`
+          fixed lg:relative inset-y-0 left-0 z-50 w-80 bg-card border-r border-border
+          transform transition-all duration-300 ease-in-out lg:translate-x-0 shadow-lg lg:shadow-none
+          ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}
+        `}
+        >
+          <ChatSidebar
+            conversations={conversations}
+            currentConversation={currentConversation}
+            onSelectConversation={setCurrentConversation}
+            onNewConversation={createNewConversation}
+            onUpdateConversation={updateConversation}
+            onDeleteConversation={deleteConversation}
+            onExportConversation={exportConversation}
+            onLogout={handleLogout}
+            user={user}
+          />
+        </div>
 
         {/* Main chat area */}
         <div className="flex-1 flex flex-col min-w-0 bg-background">
           <ChatHeader
             currentConversation={currentConversation}
             onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+            onStartAudioCall={() => setShowAudioCall(true)}
+            onStartVideoCall={() => setShowVideoCall(true)}
           />
-
-          {currentConversation && (
-            <div className="px-6 py-4 border-b border-border bg-card/50">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                  <span className="text-sm font-medium text-foreground">Active Session</span>
-                </div>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => setShowAnalytics(!showAnalytics)} 
-                  className="rounded-lg"
-                >
-                  <BarChart3 className="h-4 w-4 mr-2" />
-                  {showAnalytics ? "Hide Analytics" : "Show Analytics"}
-                </Button>
-              </div>
-            </div>
-          )}
 
           {/* Crisis Alert */}
           {showCrisisAlert && (
-            <div className="p-4 bg-destructive/10 border-b border-destructive/20">
+            <div className="px-4 py-3 bg-destructive/10 border-b border-destructive/20">
               <CrisisAlert onDismiss={() => setShowCrisisAlert(false)} />
             </div>
           )}
 
+          {/* Emotion Tracker */}
+          {currentConversation && !showAnalytics && (
+            <div className="px-4 py-3 border-b border-border bg-card/50">
+              <EmotionTracker conversationId={currentConversation.id} />
+            </div>
+          )}
+
+          {/* Analytics toggle - simplified */}
+          {currentConversation && !showAnalytics && (
+            <div className="px-4 py-2 border-b border-border bg-card/30 flex justify-end">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setShowAnalytics(true)} 
+                className="text-xs"
+              >
+                <BarChart3 className="h-3 w-3 mr-2" />
+                View Analytics
+              </Button>
+            </div>
+          )}
+
           {showAnalytics && currentConversation ? (
-            <div className="flex-1 overflow-y-auto p-6 bg-muted/30">
-              <SessionAnalytics conversationId={currentConversation.id} />
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-muted/30">
+              <div className="max-w-5xl mx-auto">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-semibold">Session Analytics</h2>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setShowAnalytics(false)}
+                  >
+                    <X className="h-4 w-4 mr-2" />
+                    Close
+                  </Button>
+                </div>
+                <SessionAnalytics conversationId={currentConversation.id} />
+              </div>
             </div>
           ) : (
             <>
-              {currentConversation && (
-                <div className="px-6 py-3 bg-accent/5 border-b border-border">
-                  <EmotionTracker conversationId={currentConversation.id} />
-                </div>
-              )}
-
               {/* Messages */}
               <div className="flex-1 overflow-hidden bg-background">
                 <ChatMessages messages={messages} />
               </div>
 
               {/* Input */}
-              <div className="bg-card border-t border-border">
-                <ChatInput onSendMessage={sendMessage} conversationId={currentConversation?.id} />
-              </div>
+              <ChatInput onSendMessage={sendMessage} conversationId={currentConversation?.id} />
             </>
           )}
         </div>
-    </div>
+      </div>
+
+      {/* Full-screen modals */}
+      {showAudioCall && (
+        <FullscreenAudioCall 
+          conversationId={currentConversation?.id}
+          onClose={() => setShowAudioCall(false)}
+        />
+      )}
+
+      {showVideoCall && (
+        <FullscreenVideoCall 
+          conversationId={currentConversation?.id}
+          onClose={() => setShowVideoCall(false)}
+        />
+      )}
+    </>
   )
 }

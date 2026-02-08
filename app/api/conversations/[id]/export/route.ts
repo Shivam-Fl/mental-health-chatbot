@@ -1,9 +1,9 @@
 import { createClient } from "@/lib/supabase/server"
 import { type NextRequest, NextResponse } from "next/server"
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const supabase = await createClient()
-  const conversationId = params.id
+  const { id: conversationId } = await params
   const { searchParams } = new URL(request.url)
   const format = searchParams.get("format") || "json"
 

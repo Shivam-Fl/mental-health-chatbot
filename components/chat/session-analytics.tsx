@@ -141,7 +141,7 @@ export function SessionAnalytics({ conversationId }: SessionAnalyticsProps) {
                 <YAxis domain={[0, 1]} tickFormatter={(value) => `${(value * 100).toFixed(0)}%`} />
                 <Tooltip
                   labelFormatter={(value) => new Date(value).toLocaleString()}
-                  formatter={(value: number, name) => [`${(value * 100).toFixed(1)}%`, "Confidence"]}
+                  formatter={(value: number | undefined, name) => [value !== undefined ? `${(value * 100).toFixed(1)}%` : 'N/A', "Confidence"]}
                 />
                 <Line
                   type="monotone"

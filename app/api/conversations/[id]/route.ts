@@ -1,9 +1,9 @@
 import { createClient } from "@/lib/supabase/server"
 import { type NextRequest, NextResponse } from "next/server"
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const supabase = await createClient()
-  const conversationId = params.id
+  const { id: conversationId } = await params
 
   const {
     data: { user },
@@ -30,9 +30,9 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   return NextResponse.json({ conversation })
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const supabase = await createClient()
-  const conversationId = params.id
+  const { id: conversationId } = await params
   const { title, summary, notes } = await request.json()
 
   const {
@@ -63,9 +63,9 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   return NextResponse.json({ conversation })
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const supabase = await createClient()
-  const conversationId = params.id
+  const { id: conversationId } = await params
 
   const {
     data: { user },

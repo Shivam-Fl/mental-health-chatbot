@@ -1,5 +1,27 @@
 # Changelog - Production-Ready Improvements
 
+## Version 2.1.0 - Security Update (February 2026)
+
+### 🔒 Critical Security Fixes
+- ✅ **Upgraded Next.js from 14.2.16 to 15.5.12** to resolve critical security vulnerabilities:
+  - Fixed CVE-2025-24565: DoS vulnerability via Image Optimizer remotePatterns configuration
+  - Fixed CVE-2025-24564: HTTP request deserialization DoS with insecure React Server Components
+- ✅ **Updated route handlers** to comply with Next.js 15 async params API
+- ✅ **Fixed TypeScript compatibility** issues with recharts components
+- ✅ **Verified build stability** - application now builds successfully without errors
+
+### 📦 Dependency Updates
+- Next.js: 14.2.16 → 15.5.12
+- React & React DOM: Explicitly set to 18.3.1 for compatibility
+- eslint-config-next: Already at 16.1.6 (compatible)
+
+### 🔧 Technical Changes
+- Updated all dynamic route handlers to use `Promise<{ id: string }>` for params
+- Fixed recharts Tooltip formatter to handle undefined values
+- Ensured TypeScript strict mode compliance
+
+---
+
 ## Version 2.0.0 - Production Ready Release
 
 This release transforms the mental health chatbot from a prototype into a professional, production-ready application.
