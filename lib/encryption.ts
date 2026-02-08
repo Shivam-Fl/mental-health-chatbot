@@ -19,12 +19,7 @@ function getEncryptionKey(): Buffer {
   const key = process.env.CHAT_ENCRYPTION_KEY;
   
   if (!key) {
-    // In development, use a default key (NOT FOR PRODUCTION)
-    if (process.env.NODE_ENV === 'development') {
-      console.warn('WARNING: Using default encryption key. Set CHAT_ENCRYPTION_KEY for production!');
-      return crypto.scryptSync('default-dev-key-change-me', 'salt', KEY_LENGTH);
-    }
-    throw new Error('CHAT_ENCRYPTION_KEY environment variable is not set');
+    throw new Error('CHAT_ENCRYPTION_KEY environment variable is required. Generate one with: openssl rand -base64 32');
   }
   
   // Derive a proper key from the provided key

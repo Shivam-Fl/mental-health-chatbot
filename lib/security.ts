@@ -24,6 +24,8 @@ export function applySecurityHeaders(response: NextResponse): NextResponse {
   );
   
   // Content Security Policy
+  // Note: 'unsafe-inline' and 'unsafe-eval' are used for Next.js compatibility
+  // Consider using nonces or strict CSP in the future for enhanced security
   const csp = [
     "default-src 'self'",
     "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://va.vercel-scripts.com",

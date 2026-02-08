@@ -1,7 +1,6 @@
 import { updateSession } from "@/lib/supabase/middleware"
 import { applySecurityHeaders } from "@/lib/security"
 import type { NextRequest } from "next/server"
-import { NextResponse } from "next/server"
 
 export async function middleware(request: NextRequest) {
   // Update session and get response

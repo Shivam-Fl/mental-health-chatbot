@@ -8,8 +8,17 @@ interface RateLimitEntry {
   resetTime: number;
 }
 
-// In-memory store (use Redis in production for distributed systems)
+// In-memory store (use Redis/Upstash in production for distributed systems)
 const rateLimitStore = new Map<string, RateLimitEntry>();
+
+// Warn if using in-memory store in production
+if (process.env.NODE_ENV === 'production' && !process.env.REDIS_URL) {
+  console.warn(
+    '[WARNING] Using in-memory rate limiting in production. ' +
+    'This will not work correctly with multiple instances. ' +
+    'Consider using Redis/Upstash for distributed rate limiting.'
+  );
+}
 
 interface RateLimitConfig {
   windowMs: number; // Time window in milliseconds

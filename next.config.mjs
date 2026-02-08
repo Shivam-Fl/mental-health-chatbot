@@ -5,7 +5,8 @@ const nextConfig = {
     ignoreDuringBuilds: true, // Since ESLint config has issues, keep this for now
   },
   typescript: {
-    ignoreBuildErrors: false, // Enable type checking in production
+    // Enable type checking in production - ensure `npm run build` passes locally first
+    ignoreBuildErrors: false,
   },
   images: {
     remotePatterns: [
