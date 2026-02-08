@@ -1,10 +1,16 @@
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import { createClient } from "@/lib/supabase/server"
+import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit"
+import { sanitizeInput, isValidMessageContent, logSecurityEvent } from "@/lib/security"
 
 export const maxDuration = 30
 
-// Initialize Google AI with direct API key
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || "")
+// Initialize Google AI with environment variable
+if (!process.env.GOOGLE_API_KEY) {
+  throw new Error("GOOGLE_API_KEY environment variable is not set")
+}
+
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY)
 
 // Mental health specialized system prompt
 const MENTAL_HEALTH_SYSTEM_PROMPT = `
@@ -35,7 +41,58 @@ export async function POST(req: Request) {
   try {
     const { message, conversationId, messageType }: ChatRequest = await req.json()
 
+    // Validate input
+    const validation = isValidMessageContent(message)
+    if (!validation.valid) {
+      return Response.json(
+        { error: validation.error },
+        { status: 400 }
+      )
+    }
+
+    // Sanitize user input
+    const sanitizedMessage = sanitizeInput(message)
+
     const supabase = await createClient()
+    
+    // Get user for rate limiting
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    
+    if (userError || !user) {
+      logSecurityEvent({
+        type: 'unauthorized_access',
+        details: 'Chat API accessed without authentication'
+      })
+      return Response.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      )
+    }
+
+    // Apply rate limiting
+    const rateLimitResult = checkRateLimit(`user:${user.id}`, RATE_LIMITS.chat)
+    
+    if (!rateLimitResult.allowed) {
+      logSecurityEvent({
+        type: 'rate_limit',
+        userId: user.id,
+        details: 'Chat API rate limit exceeded'
+      })
+      return Response.json(
+        { 
+          error: "Too many requests",
+          retryAfter: rateLimitResult.retryAfter 
+        },
+        { 
+          status: 429,
+          headers: {
+            'Retry-After': rateLimitResult.retryAfter?.toString() || '60',
+            'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
+            'X-RateLimit-Reset': new Date(rateLimitResult.resetTime).toISOString(),
+          }
+        }
+      )
+    }
 
     // Get conversation history for context
     const { data: messages, error: messagesError } = await supabase

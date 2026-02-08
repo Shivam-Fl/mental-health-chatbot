@@ -1,7 +1,11 @@
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import { z } from "zod"
 
-const genAI = new GoogleGenerativeAI("AIzaSyD6IDQNHh8VHmFa-4YmRSRlWz6T00_k_Lc")
+if (!process.env.GOOGLE_API_KEY) {
+  throw new Error("GOOGLE_API_KEY environment variable is not set")
+}
+
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY)
 
 const emotionAnalysisSchema = z.object({
   emotion: z.enum(["joy", "sadness", "anger", "fear", "surprise", "disgust", "neutral", "anxiety", "stress"]),
