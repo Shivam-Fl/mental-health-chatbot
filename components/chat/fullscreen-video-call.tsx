@@ -93,15 +93,20 @@ export function FullscreenVideoCall({ conversationId, onClose }: FullscreenVideo
     }
   }, [])
 
-  // Auto-start listening when audio is enabled and streaming
+  // Start listening once when streaming and audio are ready (one-time only)
   useEffect(() => {
-    if (isStreaming && isAudioEnabled && !isListening && !isSpeaking && !isProcessingRequest) {
-      // Auto-start listening for real-time experience
-      setTimeout(() => {
-        startListening()
+    let timeout: NodeJS.Timeout
+    if (isStreaming && isAudioEnabled && !isListening && !isSpeaking) {
+      // Wait a bit for stream to stabilize, then start listening once
+      timeout = setTimeout(() => {
+        if (!isListening && !isSpeaking) {
+          console.log("Initial listening start")
+          startListening()
+        }
       }, AUTO_START_LISTENING_DELAY_MS)
     }
-  }, [isStreaming, isAudioEnabled, isListening, isSpeaking, isProcessingRequest, startListening])
+    return () => clearTimeout(timeout)
+  }, [isStreaming, isAudioEnabled]) // Only depend on these, not listening/speaking state
 
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60)

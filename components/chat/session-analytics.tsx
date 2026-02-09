@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
-import { TrendingUp, Clock, MessageSquare, Heart, Brain, Target } from "lucide-react"
+import { TrendingUp, Clock, MessageSquare, Heart, Brain, Target, RefreshCw } from "lucide-react"
+import { Button } from "@/components/ui/button"
 
 interface SessionAnalyticsProps {
   conversationId: string
@@ -34,6 +35,7 @@ interface AnalyticsData {
 export function SessionAnalytics({ conversationId }: SessionAnalyticsProps) {
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (conversationId) {
@@ -43,16 +45,24 @@ export function SessionAnalytics({ conversationId }: SessionAnalyticsProps) {
 
   const loadAnalytics = async () => {
     try {
+      setLoading(true)
+      setError(null)
+      console.log("Loading analytics for conversation:", conversationId)
       const response = await fetch(`/api/conversations/${conversationId}/analytics`)
+      console.log("Analytics API response status:", response.status)
       if (!response.ok) {
-        console.error("Analytics API error:", response.status)
+        const errorText = await response.text()
+        console.error("Analytics API error:", response.status, errorText)
+        setError(`Failed to load analytics (${response.status})`)
         setAnalytics(null)
         return
       }
       const data = await response.json()
+      console.log("Analytics data received:", data)
       setAnalytics(data.analytics || null)
     } catch (error) {
       console.error("Failed to load analytics:", error)
+      setError(error instanceof Error ? error.message : "Failed to load analytics")
       setAnalytics(null)
     } finally {
       setLoading(false)
@@ -79,8 +89,16 @@ export function SessionAnalytics({ conversationId }: SessionAnalyticsProps) {
   if (!analytics) {
     return (
       <Card>
-        <CardContent className="p-6 text-center text-muted-foreground">
-          No analytics data available for this session.
+        <CardContent className="p-6 text-center">
+          <p className="text-muted-foreground mb-4">
+            {error || "No analytics data available for this session."}
+          </p>
+          <button 
+            onClick={loadAnalytics}
+            className="text-sm text-primary hover:underline"
+          >
+            Try again
+          </button>
         </CardContent>
       </Card>
     )
@@ -94,6 +112,21 @@ export function SessionAnalytics({ conversationId }: SessionAnalyticsProps) {
 
   return (
     <div className="space-y-6">
+      {/* Header with refresh button */}
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold">Session Analytics</h3>
+        <Button 
+          variant="outline" 
+          size="sm"
+          onClick={loadAnalytics}
+          disabled={loading}
+          className="gap-2"
+        >
+          <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+          Refresh
+        </Button>
+      </div>
+
       {/* Session Overview */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>

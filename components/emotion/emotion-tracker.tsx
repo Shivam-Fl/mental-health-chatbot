@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { createClient } from "@/lib/supabase/client"
 import { EmotionIndicator } from "../chat/emotion-indicator"
-import { TrendingUp, TrendingDown, Minus } from "lucide-react"
+import { TrendingUp, TrendingDown, Minus, ChevronDown, ChevronUp } from "lucide-react"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 
 interface RecentEmotion {
   emotion_type: string
@@ -22,6 +23,7 @@ export function EmotionTracker({ conversationId }: EmotionTrackerProps) {
   const [recentEmotions, setRecentEmotions] = useState<RecentEmotion[]>([])
   const [emotionTrend, setEmotionTrend] = useState<"improving" | "declining" | "stable">("stable")
   const [isLoading, setIsLoading] = useState(true)
+  const [isOpen, setIsOpen] = useState(true) // Collapsible state
 
   const supabase = createClient()
 
@@ -112,33 +114,42 @@ export function EmotionTracker({ conversationId }: EmotionTrackerProps) {
   }
 
   return (
-    <Card className="mb-4">
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="text-sm">Emotion Tracking</CardTitle>
-            <CardDescription className="text-xs">Your recent emotional state</CardDescription>
-          </div>
-          <Badge variant="outline" className={getTrendColor()}>
-            {getTrendIcon()}
-            <span className="ml-1 capitalize">{emotionTrend}</span>
-          </Badge>
-        </div>
-      </CardHeader>
-      <CardContent className="pt-0">
-        <div className="flex flex-wrap gap-2 mb-3">
-          {recentEmotions.slice(0, 5).map((emotion, index) => (
-            <EmotionIndicator key={index} emotion={emotion.emotion_type} className="text-xs" />
-          ))}
-        </div>
+    <Collapsible open={isOpen} onOpenChange={setIsOpen} className="mb-4">
+      <Card>
+        <CollapsibleTrigger asChild>
+          <CardHeader className="pb-3 cursor-pointer hover:bg-muted/50 transition-colors">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CardTitle className="text-sm">Emotion Tracking</CardTitle>
+                <CardDescription className="text-xs">Your recent emotional state</CardDescription>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className={getTrendColor()}>
+                  {getTrendIcon()}
+                  <span className="ml-1 capitalize">{emotionTrend}</span>
+                </Badge>
+                {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              </div>
+            </div>
+          </CardHeader>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <CardContent className="pt-0">
+            <div className="flex flex-wrap gap-2 mb-3">
+              {recentEmotions.slice(0, 5).map((emotion, index) => (
+                <EmotionIndicator key={index} emotion={emotion.emotion_type} className="text-xs" />
+              ))}
+            </div>
 
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <span>Last {recentEmotions.length} emotions detected</span>
-          <Button variant="ghost" size="sm" className="h-6 text-xs" asChild>
-            <a href="/dashboard">View Details</a>
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>Last {recentEmotions.length} emotions detected</span>
+              <Button variant="ghost" size="sm" className="h-6 text-xs" asChild>
+                <a href="/dashboard">View Details</a>
+              </Button>
+            </div>
+          </CardContent>
+        </CollapsibleContent>
+      </Card>
+    </Collapsible>
   )
 }
