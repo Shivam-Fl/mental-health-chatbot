@@ -86,7 +86,7 @@ export function ChatSidebar({
   }
 
   return (
-    <div className="h-full flex flex-col bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-800 border-r border-border/50">
+    <div className="h-full flex flex-col bg-gradient-to-b from-card to-background border-r border-border/50">
       {/* Header */}
       <div className="p-6 border-b border-border/50 bg-gradient-to-r from-blue-50/50 to-purple-50/50 dark:from-blue-950/20 dark:to-purple-950/20">
         <div className="flex items-center gap-3 mb-6">
@@ -96,8 +96,8 @@ export function ChatSidebar({
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold truncate text-slate-900 dark:text-slate-100">{user.user_metadata?.full_name || "User"}</p>
-            <p className="text-xs text-slate-600 dark:text-slate-400 truncate">{user.email}</p>
+            <p className="text-sm font-semibold truncate text-foreground">{user.user_metadata?.full_name || "User"}</p>
+            <p className="text-xs text-muted-foreground truncate">{user.email}</p>
           </div>
         </div>
 
@@ -111,31 +111,31 @@ export function ChatSidebar({
         </Button>
 
         <Link href="/dashboard">
-          <Button variant="outline" size="sm" className="w-full bg-white/80 dark:bg-slate-800/80 hover:bg-white dark:hover:bg-slate-800 border-blue-200 dark:border-blue-800 hover:border-blue-300 dark:hover:border-blue-700 transition-all duration-200">
+          <Button variant="outline" size="sm" className="w-full bg-card/80 hover:bg-card border-blue-200 dark:border-blue-800 hover:border-blue-300 dark:hover:border-blue-700 transition-all duration-200">
             <BarChart3 className="h-4 w-4 mr-2" />
             Analytics Dashboard
           </Button>
         </Link>
 
         <div className="relative mt-4">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500 dark:text-slate-400 h-4 w-4" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
             placeholder="Search sessions..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 h-9 bg-white/90 dark:bg-slate-800/90 border-slate-200 dark:border-slate-700 focus:border-blue-400 dark:focus:border-blue-600 focus:ring-2 focus:ring-blue-200/50 dark:focus:ring-blue-800/50 transition-all duration-200"
+            className="pl-10 h-9 bg-card/90 border-border focus:border-blue-400 dark:focus:border-blue-600 focus:ring-2 focus:ring-blue-200/50 dark:focus:ring-blue-800/50 transition-all duration-200"
           />
         </div>
       </div>
 
       {/* Conversations */}
-      <ScrollArea className="flex-1 bg-gradient-to-b from-white/50 to-slate-50/50 dark:from-slate-800/50 dark:to-slate-900/50">
+      <ScrollArea className="flex-1 bg-gradient-to-b from-card/50 to-muted/50">
         <div className="p-3">
           {filteredConversations.length === 0 ? (
-            <div className="text-center py-12 bg-white/80 dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700 m-2">
-              <MessageSquare className="h-10 w-10 text-slate-400 dark:text-slate-500 mx-auto mb-3" />
-              <p className="text-sm font-medium text-slate-600 dark:text-slate-300">{searchQuery ? "No sessions found" : "No sessions yet"}</p>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            <div className="text-center py-12 bg-card/80 rounded-xl border border-border m-2">
+              <MessageSquare className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+              <p className="text-sm font-medium text-foreground">{searchQuery ? "No sessions found" : "No sessions yet"}</p>
+              <p className="text-xs text-muted-foreground mt-1">
                 {searchQuery ? "Try a different search term" : "Start a new session to begin"}
               </p>
             </div>
@@ -146,7 +146,7 @@ export function ChatSidebar({
                 className={`group relative rounded-xl p-4 mb-2 cursor-pointer transition-all duration-200 hover:shadow-md ${
                   currentConversation?.id === conversation.id 
                     ? "bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 border-2 border-blue-200 dark:border-blue-800 shadow-md" 
-                    : "bg-white/90 dark:bg-slate-800/90 hover:bg-white dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-blue-200 dark:hover:border-blue-800"
+                    : "bg-card/90 hover:bg-card border border-border hover:border-blue-200 dark:hover:border-blue-800"
                 }`}
                 onClick={(e) => {
                   // Don't select conversation if clicking on dropdown
@@ -158,17 +158,17 @@ export function ChatSidebar({
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold truncate text-slate-900 dark:text-slate-100">{conversation.title}</p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">{formatDate(conversation.updated_at)}</p>
+                    <p className="text-sm font-semibold truncate text-foreground">{conversation.title}</p>
+                    <p className="text-xs text-muted-foreground">{formatDate(conversation.updated_at)}</p>
                     {conversation.summary && (
-                      <p className="text-xs text-slate-600 dark:text-slate-300 mt-1 line-clamp-2">{conversation.summary}</p>
+                      <p className="text-xs text-foreground mt-1 line-clamp-2">{conversation.summary}</p>
                     )}
                   </div>
 
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <button
-                        className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity z-20 relative hover:bg-slate-100 dark:hover:bg-slate-700 bg-transparent border-0 rounded flex items-center justify-center"
+                        className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity z-20 relative hover:bg-muted bg-transparent border-0 rounded flex items-center justify-center"
                         onClick={(e) => e.stopPropagation()}
                         data-dropdown-trigger="true"
                       >
@@ -214,9 +214,9 @@ export function ChatSidebar({
       </ScrollArea>
 
       {/* Footer */}
-      <div className="p-4 border-t border-border/50 bg-gradient-to-r from-slate-50/50 to-blue-50/50 dark:from-slate-800/50 dark:to-blue-950/20">
+      <div className="p-4 border-t border-border/50 bg-gradient-to-r from-muted/50 to-primary/5">
         <div className="flex gap-2">
-          <Button variant="ghost" size="sm" className="flex-1 hover:bg-white dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-all duration-200">
+          <Button variant="ghost" size="sm" className="flex-1 hover:bg-card text-foreground transition-all duration-200">
             <Settings className="h-4 w-4 mr-2" />
             Settings
           </Button>

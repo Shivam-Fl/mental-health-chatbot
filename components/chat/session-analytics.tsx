@@ -44,10 +44,16 @@ export function SessionAnalytics({ conversationId }: SessionAnalyticsProps) {
   const loadAnalytics = async () => {
     try {
       const response = await fetch(`/api/conversations/${conversationId}/analytics`)
+      if (!response.ok) {
+        console.error("Analytics API error:", response.status)
+        setAnalytics(null)
+        return
+      }
       const data = await response.json()
-      setAnalytics(data.analytics)
+      setAnalytics(data.analytics || null)
     } catch (error) {
       console.error("Failed to load analytics:", error)
+      setAnalytics(null)
     } finally {
       setLoading(false)
     }
@@ -146,9 +152,9 @@ export function SessionAnalytics({ conversationId }: SessionAnalyticsProps) {
                 <Line
                   type="monotone"
                   dataKey="confidence"
-                  stroke="hsl(var(--primary))"
+                  stroke="var(--primary)"
                   strokeWidth={2}
-                  dot={{ fill: "hsl(var(--primary))" }}
+                  dot={{ fill: "var(--primary)" }}
                 />
               </LineChart>
             </ResponsiveContainer>

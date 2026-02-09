@@ -20,8 +20,19 @@ export function useAudioStream(options: AudioStreamOptions = {}) {
   const recognitionRef = useRef<SpeechRecognition | null>(null)
   const synthRef = useRef<SpeechSynthesis | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
+  const isListeningRef = useRef(false)
+  const optionsRef = useRef(options)
 
-  // Initialize speech recognition
+  // Keep refs in sync with state
+  useEffect(() => {
+    isListeningRef.current = isListening
+  }, [isListening])
+
+  useEffect(() => {
+    optionsRef.current = options
+  }, [options])
+
+  // Initialize speech recognition once
   useEffect(() => {
     if (typeof window !== "undefined" && ("webkitSpeechRecognition" in window || "SpeechRecognition" in window)) {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
@@ -47,20 +58,29 @@ export function useAudioStream(options: AudioStreamOptions = {}) {
 
           const fullTranscript = finalTranscript || interimTranscript
           setTranscript(fullTranscript)
-          options.onTranscript?.(fullTranscript, !!finalTranscript)
+          optionsRef.current.onTranscript?.(fullTranscript, !!finalTranscript)
         }
 
         recognitionRef.current.onerror = (event) => {
+          if (event.error === "aborted" || event.error === "no-speech") {
+            // These are expected errors, don't propagate
+            console.log("Speech recognition:", event.error)
+            return
+          }
           const error = new Error(`Speech recognition error: ${event.error}`)
           setError(error.message)
-          options.onError?.(error)
+          optionsRef.current.onError?.(error)
         }
 
         recognitionRef.current.onend = () => {
-          if (isListening) {
+          if (isListeningRef.current) {
             // Restart recognition if we're still supposed to be listening
             try {
-              recognitionRef.current?.start()
+              setTimeout(() => {
+                if (isListeningRef.current && recognitionRef.current) {
+                  recognitionRef.current.start()
+                }
+              }, 200)
             } catch (e) {
               console.log("Recognition restart failed:", e)
             }
@@ -75,10 +95,17 @@ export function useAudioStream(options: AudioStreamOptions = {}) {
     }
 
     return () => {
-      stopListening()
-      stopSpeaking()
+      if (recognitionRef.current) {
+        try { recognitionRef.current.stop() } catch (e) { /* ignore */ }
+      }
+      if (synthRef.current) {
+        synthRef.current.cancel()
+      }
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop())
+      }
     }
-  }, [isListening])
+  }, []) // Initialize only once
 
   const startListening = useCallback(async () => {
     try {
@@ -94,7 +121,8 @@ export function useAudioStream(options: AudioStreamOptions = {}) {
       }
       
       setIsListening(true)
-      options.onStatusChange?.("listening")
+      isListeningRef.current = true
+      optionsRef.current.onStatusChange?.("listening")
 
       // Get microphone access
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
@@ -104,11 +132,13 @@ export function useAudioStream(options: AudioStreamOptions = {}) {
       if (recognitionRef.current) {
         setTimeout(() => {
           try {
-            recognitionRef.current?.start()
+            if (isListeningRef.current) {
+              recognitionRef.current?.start()
+            }
           } catch (e) {
             console.log("Recognition start error (may be already started):", e)
           }
-        }, 100)
+        }, 200)
       }
 
       // Set up media recorder for backup audio capture
@@ -126,14 +156,16 @@ export function useAudioStream(options: AudioStreamOptions = {}) {
       const error = err instanceof Error ? err : new Error("Failed to start audio recording")
       setError(error.message)
       setIsListening(false)
-      options.onError?.(error)
-      options.onStatusChange?.("idle")
+      isListeningRef.current = false
+      optionsRef.current.onError?.(error)
+      optionsRef.current.onStatusChange?.("idle")
     }
-  }, [options])
+  }, [])
 
   const stopListening = useCallback(() => {
     setIsListening(false)
-    options.onStatusChange?.("idle")
+    isListeningRef.current = false
+    optionsRef.current.onStatusChange?.("idle")
 
     // Stop speech recognition
     if (recognitionRef.current) {
@@ -150,7 +182,7 @@ export function useAudioStream(options: AudioStreamOptions = {}) {
       streamRef.current.getTracks().forEach((track) => track.stop())
       streamRef.current = null
     }
-  }, [options])
+  }, [])
 
   const processAudio = useCallback(
     async (transcript: string, conversationId?: string, faceEmotion?: { emotion: string; confidence: number; visualAnalysis?: any }) => {
@@ -158,7 +190,7 @@ export function useAudioStream(options: AudioStreamOptions = {}) {
 
       console.log("[DEBUG] Processing audio with:", { transcript, conversationId, faceEmotion })
       setIsProcessing(true)
-      options.onStatusChange?.("processing")
+      optionsRef.current.onStatusChange?.("processing")
 
       try {
         // Send transcript to AI for processing
@@ -169,8 +201,8 @@ export function useAudioStream(options: AudioStreamOptions = {}) {
             transcript,
             audioData: audioChunksRef.current.length > 0 ? await blobToBase64(audioChunksRef.current[0]) : null,
             conversationId,
-            faceEmotion: faceEmotion || null, // Include face emotion if video is enabled
-            hasVideo: !!faceEmotion, // Flag to let AI know video is available
+            faceEmotion: faceEmotion || null,
+            hasVideo: !!faceEmotion,
           }),
         })
 
@@ -189,13 +221,13 @@ export function useAudioStream(options: AudioStreamOptions = {}) {
       } catch (err) {
         const error = err instanceof Error ? err : new Error("Failed to process audio")
         setError(error.message)
-        options.onError?.(error)
+        optionsRef.current.onError?.(error)
       } finally {
         setIsProcessing(false)
-        options.onStatusChange?.(isListening ? "listening" : "idle")
+        optionsRef.current.onStatusChange?.(isListeningRef.current ? "listening" : "idle")
       }
     },
-    [isListening, options],
+    [],
   )
 
   const speakText = useCallback(
@@ -207,7 +239,7 @@ export function useAudioStream(options: AudioStreamOptions = {}) {
         }
 
         setIsSpeaking(true)
-        options.onStatusChange?.("speaking")
+        optionsRef.current.onStatusChange?.("speaking")
 
         const utterance = new SpeechSynthesisUtterance(text)
         utterance.rate = 0.9
@@ -225,29 +257,29 @@ export function useAudioStream(options: AudioStreamOptions = {}) {
 
         utterance.onend = () => {
           setIsSpeaking(false)
-          options.onStatusChange?.(isListening ? "listening" : "idle")
+          optionsRef.current.onStatusChange?.(isListeningRef.current ? "listening" : "idle")
           resolve()
         }
 
         utterance.onerror = (event) => {
           setIsSpeaking(false)
-          options.onStatusChange?.(isListening ? "listening" : "idle")
+          optionsRef.current.onStatusChange?.(isListeningRef.current ? "listening" : "idle")
           reject(new Error(`Speech synthesis error: ${event.error}`))
         }
 
         synthRef.current.speak(utterance)
       })
     },
-    [isListening, options],
+    [],
   )
 
   const stopSpeaking = useCallback(() => {
     if (synthRef.current) {
       synthRef.current.cancel()
       setIsSpeaking(false)
-      options.onStatusChange?.(isListening ? "listening" : "idle")
+      optionsRef.current.onStatusChange?.(isListeningRef.current ? "listening" : "idle")
     }
-  }, [isListening, options])
+  }, [])
 
   const toggleListening = useCallback(() => {
     if (isListening) {

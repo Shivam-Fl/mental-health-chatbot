@@ -88,22 +88,22 @@ export function EmotionTracker({ conversationId }: EmotionTrackerProps) {
   const getTrendIcon = () => {
     switch (emotionTrend) {
       case "improving":
-        return <TrendingUp className="h-4 w-4 text-green-600" />
+        return <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />
       case "declining":
-        return <TrendingDown className="h-4 w-4 text-red-600" />
+        return <TrendingDown className="h-4 w-4 text-red-600 dark:text-red-400" />
       default:
-        return <Minus className="h-4 w-4 text-gray-600" />
+        return <Minus className="h-4 w-4 text-muted-foreground" />
     }
   }
 
   const getTrendColor = () => {
     switch (emotionTrend) {
       case "improving":
-        return "bg-green-500/10 text-green-600 border-green-500/20"
+        return "bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20"
       case "declining":
-        return "bg-red-500/10 text-red-600 border-red-500/20"
+        return "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20"
       default:
-        return "bg-gray-500/10 text-gray-600 border-gray-500/20"
+        return "bg-muted text-muted-foreground border-border"
     }
   }
 

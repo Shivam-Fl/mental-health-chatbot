@@ -74,22 +74,22 @@ export function FullscreenAudioCall({ conversationId, onClose }: FullscreenAudio
       </Button>
 
       {/* Main content */}
-      <div className="w-full max-w-md px-6 flex flex-col items-center gap-8">
+      <div className="w-full max-w-md px-4 sm:px-6 flex flex-col items-center gap-6 sm:gap-8 overflow-y-auto max-h-[90vh]">
         {/* Avatar and status */}
-        <div className="flex flex-col items-center gap-4">
+        <div className="flex flex-col items-center gap-3 sm:gap-4">
           <div className={cn(
-            "w-32 h-32 rounded-full flex items-center justify-center transition-all duration-300",
+            "w-24 h-24 sm:w-32 sm:h-32 rounded-full flex items-center justify-center transition-all duration-300",
             isListening 
               ? "bg-gradient-to-br from-green-400 to-blue-500 shadow-2xl shadow-green-500/50 scale-110 animate-pulse" 
               : "bg-gradient-to-br from-primary/30 to-accent/30"
           )}>
-            <div className="w-28 h-28 rounded-full bg-background flex items-center justify-center">
+            <div className="w-20 h-20 sm:w-28 sm:h-28 rounded-full bg-background flex items-center justify-center">
               {isListening ? (
-                <Mic className="h-12 w-12 text-green-500 animate-pulse" />
+                <Mic className="h-8 w-8 sm:h-12 sm:w-12 text-green-500 animate-pulse" />
               ) : isSpeaking ? (
-                <Volume2 className="h-12 w-12 text-blue-500 animate-pulse" />
+                <Volume2 className="h-8 w-8 sm:h-12 sm:w-12 text-blue-500 animate-pulse" />
               ) : (
-                <Phone className="h-12 w-12 text-muted-foreground" />
+                <Phone className="h-8 w-8 sm:h-12 sm:w-12 text-muted-foreground" />
               )}
             </div>
           </div>
@@ -99,16 +99,16 @@ export function FullscreenAudioCall({ conversationId, onClose }: FullscreenAudio
             <div className="flex items-center gap-3 justify-center">
               <Badge variant="outline" className={cn(
                 "transition-colors",
-                isListening && "bg-green-500/10 text-green-600 border-green-500/20",
-                isSpeaking && "bg-blue-500/10 text-blue-600 border-blue-500/20",
-                isProcessing && "bg-yellow-500/10 text-yellow-600 border-yellow-500/20"
+                isListening && "bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20",
+                isSpeaking && "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20",
+                isProcessing && "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border-yellow-500/20"
               )}>
                 <div className={cn(
                   "w-2 h-2 rounded-full mr-2",
                   isListening && "bg-green-500 animate-pulse",
                   isSpeaking && "bg-blue-500 animate-pulse",
                   isProcessing && "bg-yellow-500 animate-spin",
-                  !isListening && !isSpeaking && !isProcessing && "bg-gray-500"
+                  !isListening && !isSpeaking && !isProcessing && "bg-muted-foreground"
                 )} />
                 {isListening ? "Listening" : isSpeaking ? "Speaking" : isProcessing ? "Processing" : "Ready"}
               </Badge>
@@ -130,7 +130,7 @@ export function FullscreenAudioCall({ conversationId, onClose }: FullscreenAudio
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-1">You said:</p>
-                <p className="text-gray-700 dark:text-gray-300 break-words">{currentTranscript}</p>
+                <p className="text-foreground break-words">{currentTranscript}</p>
               </div>
             </div>
           </Card>
@@ -145,7 +145,7 @@ export function FullscreenAudioCall({ conversationId, onClose }: FullscreenAudio
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-green-800 dark:text-green-200 mb-1">Aura:</p>
-                <p className="text-gray-700 dark:text-gray-300 break-words">{aiResponse}</p>
+                <p className="text-foreground break-words">{aiResponse}</p>
               </div>
             </div>
           </Card>
@@ -170,7 +170,7 @@ export function FullscreenAudioCall({ conversationId, onClose }: FullscreenAudio
               isListening && "border-green-500 bg-green-50 dark:bg-green-950/30"
             )}
           >
-            {isListening ? <MicOff className="h-6 w-6 text-green-600" /> : <Mic className="h-6 w-6" />}
+            {isListening ? <MicOff className="h-6 w-6 text-green-600 dark:text-green-400" /> : <Mic className="h-6 w-6" />}
           </Button>
 
           <Button

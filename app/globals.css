@@ -133,8 +133,8 @@
 
 body {
   font-family: var(--font-sans);
-  background: hsl(var(--background));
-  color: hsl(var(--foreground));
+  background: var(--background);
+  color: var(--foreground);
 }
 
 /* Custom scrollbar for dark theme */
@@ -143,16 +143,16 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: hsl(var(--background));
+  background: var(--background);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--border));
+  background: var(--border);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--muted-foreground));
+  background: var(--muted-foreground);
 }
 
 /* Smooth animations for therapeutic feel */
@@ -166,7 +166,7 @@ body {
 button:focus-visible,
 input:focus-visible,
 textarea:focus-visible {
-  outline: 2px solid hsl(var(--ring));
+  outline: 2px solid var(--ring);
   outline-offset: 2px;
 }
 

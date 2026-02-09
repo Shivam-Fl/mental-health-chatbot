@@ -324,7 +324,7 @@ export function ChatInterface({ user }: Readonly<ChatInterfaceProps>) {
         {/* Sidebar */}
         <div
           className={`
-          fixed lg:relative inset-y-0 left-0 z-50 w-80 bg-card border-r border-border
+          fixed lg:relative inset-y-0 left-0 z-50 w-[85vw] sm:w-80 bg-card border-r border-border
           transform transition-all duration-300 ease-in-out lg:translate-x-0 shadow-lg lg:shadow-none
           ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}
         `}

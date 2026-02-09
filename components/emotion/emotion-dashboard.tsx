@@ -68,23 +68,33 @@ export function EmotionDashboard() {
           break
       }
 
-      // Fetch emotion analysis data
-      const { data: emotions, error } = await supabase
-        .from("emotion_analysis")
-        .select("*")
+      // Fetch emotion data from messages table (which has emotion_detected field)
+      const { data: messages, error } = await supabase
+        .from("messages")
+        .select("id, emotion_detected, created_at, role")
+        .not("emotion_detected", "is", null)
         .gte("created_at", startDate.toISOString())
         .order("created_at", { ascending: true })
 
       if (error) throw error
 
-      setEmotionData(emotions || [])
+      // Map messages to emotion data format
+      const emotions: EmotionData[] = (messages || [])
+        .filter((m) => m.emotion_detected && m.emotion_detected !== "supportive")
+        .map((m) => ({
+          emotion_type: m.emotion_detected,
+          confidence: 0.8,
+          created_at: m.created_at,
+        }))
+
+      setEmotionData(emotions)
 
       // Process data for trends
-      const trends = processMoodTrends(emotions || [])
+      const trends = processMoodTrends(emotions)
       setMoodTrends(trends)
 
       // Generate insights
-      const generatedInsights = generateInsights(emotions || [])
+      const generatedInsights = generateInsights(emotions)
       setInsights(generatedInsights)
     } catch (error) {
       console.error("Error loading emotion data:", error)
@@ -207,15 +217,15 @@ export function EmotionDashboard() {
   const getInsightIcon = (type: string) => {
     switch (type) {
       case "improvement":
-        return <TrendingUp className="h-4 w-4 text-green-600" />
+        return <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />
       case "concern":
-        return <TrendingDown className="h-4 w-4 text-red-600" />
+        return <TrendingDown className="h-4 w-4 text-red-600 dark:text-red-400" />
       case "pattern":
-        return <Activity className="h-4 w-4 text-blue-600" />
+        return <Activity className="h-4 w-4 text-blue-600 dark:text-blue-400" />
       case "recommendation":
-        return <Brain className="h-4 w-4 text-purple-600" />
+        return <Brain className="h-4 w-4 text-purple-600 dark:text-purple-400" />
       default:
-        return <Heart className="h-4 w-4 text-gray-600" />
+        return <Heart className="h-4 w-4 text-muted-foreground" />
     }
   }
 
@@ -232,10 +242,10 @@ export function EmotionDashboard() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Emotion Analytics</h2>
-          <p className="text-muted-foreground mt-1">Track your emotional patterns and mental health insights</p>
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Emotion Analytics</h2>
+          <p className="text-muted-foreground mt-1 text-sm sm:text-base">Track your emotional patterns and mental health insights</p>
         </div>
 
         <div className="flex gap-2">
@@ -326,7 +336,7 @@ export function EmotionDashboard() {
                   </div>
                   <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
                     <span className="text-sm font-medium">Positive Emotions</span>
-                    <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/20 text-base font-semibold">
+                    <Badge variant="outline" className="bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20 text-base font-semibold">
                       {Math.round((moodDistribution.find((m) => m.emotion === "joy")?.percentage || 0) * 100) / 100}%
                     </Badge>
                   </div>
@@ -351,9 +361,10 @@ export function EmotionDashboard() {
                     <YAxis className="text-xs" />
                     <Tooltip 
                       contentStyle={{ 
-                        backgroundColor: 'hsl(var(--card))',
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '8px'
+                        backgroundColor: 'var(--card)',
+                        border: '1px solid var(--border)',
+                        borderRadius: '8px',
+                        color: 'var(--card-foreground)'
                       }}
                     />
                     <Line type="monotone" dataKey="joy" stroke="#22c55e" strokeWidth={2} dot={{ r: 4 }} />
@@ -380,12 +391,13 @@ export function EmotionDashboard() {
                     <YAxis className="text-xs" />
                     <Tooltip 
                       contentStyle={{ 
-                        backgroundColor: 'hsl(var(--card))',
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '8px'
+                        backgroundColor: 'var(--card)',
+                        border: '1px solid var(--border)',
+                        borderRadius: '8px',
+                        color: 'var(--card-foreground)'
                       }}
                     />
-                    <Bar dataKey="count" fill="hsl(var(--primary))" radius={[8, 8, 0, 0]} />
+                    <Bar dataKey="count" fill="var(--primary)" radius={[8, 8, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>

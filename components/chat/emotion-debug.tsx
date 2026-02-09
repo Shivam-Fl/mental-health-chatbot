@@ -25,12 +25,12 @@ export function EmotionDebug({ currentEmotion, emotionConfidence, rawExpressions
   }
 
   return (
-    <Card className="fixed bottom-4 right-4 w-80 p-4 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm shadow-xl z-50">
+    <Card className="fixed bottom-4 right-4 w-80 p-4 bg-card/95 backdrop-blur-sm shadow-xl z-50">
       <div className="flex justify-between items-center mb-3">
         <h3 className="font-semibold text-sm">Emotion Debug</h3>
         <button
           onClick={() => setShowDebug(false)}
-          className="text-gray-500 hover:text-gray-700"
+          className="text-muted-foreground hover:text-foreground"
         >
           ×
         </button>
@@ -46,7 +46,7 @@ export function EmotionDebug({ currentEmotion, emotionConfidence, rawExpressions
         
         {rawExpressions && (
           <div className="space-y-1">
-            <span className="text-xs font-medium text-gray-600">Raw Values:</span>
+            <span className="text-xs font-medium text-muted-foreground">Raw Values:</span>
             <div className="grid grid-cols-2 gap-1 text-xs">
               {Object.entries(rawExpressions).map(([emotion, confidence]) => (
                 <div key={emotion} className="flex justify-between">

@@ -286,7 +286,7 @@ export function VideoCall({ conversationId, onSendMessage }: VideoCallProps) {
               "rounded-full px-4 sm:px-6 py-3 transition-all duration-300 hover:scale-105",
               isVideoEnabled 
                 ? "bg-blue-500 hover:bg-blue-600 text-white shadow-lg" 
-                : "border-2 border-gray-300 hover:border-gray-400"
+                : "border-2 border-border hover:border-muted-foreground"
             )}
           >
             {isVideoEnabled ? <Video className="h-4 w-4 sm:h-5 sm:w-5" /> : <VideoOff className="h-4 w-4 sm:h-5 sm:w-5" />}
@@ -301,7 +301,7 @@ export function VideoCall({ conversationId, onSendMessage }: VideoCallProps) {
               "rounded-full px-4 sm:px-6 py-3 transition-all duration-300 hover:scale-105",
               isAudioEnabled 
                 ? "bg-green-500 hover:bg-green-600 text-white shadow-lg" 
-                : "border-2 border-gray-300 hover:border-gray-400"
+                : "border-2 border-border hover:border-muted-foreground"
             )}
           >
             {isAudioEnabled ? <Mic className="h-4 w-4 sm:h-5 sm:w-5" /> : <MicOff className="h-4 w-4 sm:h-5 sm:w-5" />}
@@ -331,9 +331,9 @@ export function VideoCall({ conversationId, onSendMessage }: VideoCallProps) {
         <div className="space-y-4">
           {/* Status indicators */}
           <div className="flex items-center justify-center gap-2 sm:gap-4 flex-wrap">
-            <div className="flex items-center gap-2 bg-white/90 dark:bg-gray-800/90 px-3 sm:px-4 py-2 rounded-full shadow-lg backdrop-blur-sm">
+            <div className="flex items-center gap-2 bg-card/90 px-3 sm:px-4 py-2 rounded-full shadow-lg backdrop-blur-sm">
               <div className={cn("w-2 h-2 sm:w-3 sm:h-3 rounded-full animate-pulse", statusInfo.color)} />
-              <span className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">{statusInfo.text}</span>
+              <span className="text-xs sm:text-sm font-medium text-foreground">{statusInfo.text}</span>
             </div>
             
             {isListening && (
@@ -370,7 +370,7 @@ export function VideoCall({ conversationId, onSendMessage }: VideoCallProps) {
                 </div>
                 <div className="flex-1">
                   <p className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-1">You said:</p>
-                  <p className="text-gray-700 dark:text-gray-300">{currentTranscript}</p>
+                  <p className="text-foreground">{currentTranscript}</p>
                 </div>
               </div>
             </Card>
@@ -385,7 +385,7 @@ export function VideoCall({ conversationId, onSendMessage }: VideoCallProps) {
                 </div>
                 <div className="flex-1">
                   <p className="text-sm font-medium text-green-800 dark:text-green-200 mb-1">Aura responded:</p>
-                  <p className="text-gray-700 dark:text-gray-300">{aiResponse}</p>
+                  <p className="text-foreground">{aiResponse}</p>
                 </div>
               </div>
             </Card>
@@ -400,7 +400,7 @@ export function VideoCall({ conversationId, onSendMessage }: VideoCallProps) {
                 </div>
                 <div className="flex-1">
                   <p className="text-sm font-medium text-red-800 dark:text-red-200 mb-1">Error:</p>
-                  <p className="text-gray-700 dark:text-gray-300">{error}</p>
+                  <p className="text-foreground">{error}</p>
                 </div>
               </div>
             </Card>
@@ -408,8 +408,8 @@ export function VideoCall({ conversationId, onSendMessage }: VideoCallProps) {
         </div>
 
         {/* Instructions */}
-        <div className="text-center bg-white/50 dark:bg-gray-800/50 rounded-xl p-4 backdrop-blur-sm">
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+        <div className="text-center bg-card/50 rounded-xl p-4 backdrop-blur-sm">
+          <p className="text-sm text-muted-foreground">
             {isStreaming 
               ? (isAudioEnabled 
                   ? "🎤 Click the purple microphone button to speak, then click again to stop"
