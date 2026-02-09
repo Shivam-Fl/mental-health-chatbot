@@ -3,6 +3,10 @@
 import { useState, useRef, useCallback, useEffect } from "react"
 import * as faceapi from 'face-api.js'
 
+// Constants for emotion detection
+const MIN_NON_NEUTRAL_CONFIDENCE = 0.3
+const EMOTION_ANALYSIS_INTERVAL_MS = 2000
+
 interface VideoCallOptions {
   onEmotionDetected?: (emotion: string, confidence: number) => void
   onTranscript?: (transcript: string, isFinal: boolean) => void
@@ -191,7 +195,7 @@ export function useVideoCall(options: VideoCallOptions = {}) {
           if (isStreamingRef.current) {
             intervalRef.current = setInterval(() => {
               captureAndAnalyzeFrame()
-            }, 2000) // Analyze every 2 seconds
+            }, EMOTION_ANALYSIS_INTERVAL_MS) // Analyze every 2 seconds
           }
         }, 1000)
       }
@@ -545,7 +549,7 @@ async function analyzeEmotionWithFaceAPI(canvas: HTMLCanvasElement, modelsLoaded
     } else if (dominantEmotion !== "neutral") {
       // Use dominant from weighted analysis
       finalEmotion = dominantEmotion
-      finalConfidence = Math.max(maxConfidence, 0.3) // Ensure at least 30% confidence for non-neutral
+      finalConfidence = Math.max(maxConfidence, MIN_NON_NEUTRAL_CONFIDENCE) // Ensure at least 30% confidence for non-neutral
     }
 
     console.log("Final emotion detection:", { finalEmotion, finalConfidence, detectedEmotion, detectedConfidence, dominantEmotion, expressions })

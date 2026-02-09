@@ -207,11 +207,14 @@ export function EmotionDashboard() {
       distribution[emotion.emotion_type] = (distribution[emotion.emotion_type] || 0) + 1
     })
 
-    return Object.entries(distribution).map(([emotion, count]) => ({
-      emotion,
-      count,
-      percentage: Math.round((count / recent.length) * 100),
-    }))
+    // Sort by count (descending) to get the most common first
+    return Object.entries(distribution)
+      .map(([emotion, count]) => ({
+        emotion,
+        count,
+        percentage: Math.round((count / recent.length) * 100),
+      }))
+      .sort((a, b) => b.count - a.count) // Sort by count descending
   }
 
   const getInsightIcon = (type: string) => {

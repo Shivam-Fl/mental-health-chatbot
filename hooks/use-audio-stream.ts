@@ -2,6 +2,9 @@
 
 import { useState, useRef, useCallback, useEffect } from "react"
 
+// Constants for audio processing
+const RECOGNITION_RESTART_DELAY_MS = 500
+
 interface AudioStreamOptions {
   onTranscript?: (transcript: string, isFinal: boolean) => void
   onError?: (error: Error) => void
@@ -268,7 +271,7 @@ export function useAudioStream(options: AudioStreamOptions = {}) {
                 } catch (e) {
                   console.log("Recognition already started")
                 }
-              }, 500)
+              }, RECOGNITION_RESTART_DELAY_MS)
             }
           } else {
             optionsRef.current.onStatusChange?.("idle")
@@ -287,7 +290,7 @@ export function useAudioStream(options: AudioStreamOptions = {}) {
               } catch (e) {
                 console.log("Recognition already started")
               }
-            }, 500)
+            }, RECOGNITION_RESTART_DELAY_MS)
           } else {
             optionsRef.current.onStatusChange?.("idle")
           }

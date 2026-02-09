@@ -8,6 +8,10 @@ import { useVideoCall } from "@/hooks/use-video-call"
 import { useState, useCallback, useRef, useEffect } from "react"
 import { cn } from "@/lib/utils"
 
+// Constants for video call timing
+const AUTO_START_LISTENING_DELAY_MS = 1500
+const AI_RESPONSE_RESTART_DELAY_MS = 500
+
 interface FullscreenVideoCallProps {
   conversationId?: string
   onClose: () => void
@@ -85,7 +89,7 @@ export function FullscreenVideoCall({ conversationId, onClose }: FullscreenVideo
       // Small delay to allow modal to render
       setTimeout(() => {
         toggleStreaming()
-      }, 500)
+      }, AI_RESPONSE_RESTART_DELAY_MS)
     }
   }, [])
 
@@ -95,7 +99,7 @@ export function FullscreenVideoCall({ conversationId, onClose }: FullscreenVideo
       // Auto-start listening for real-time experience
       setTimeout(() => {
         startListening()
-      }, 1500)
+      }, AUTO_START_LISTENING_DELAY_MS)
     }
   }, [isStreaming, isAudioEnabled, isListening, isSpeaking, isProcessingRequest, startListening])
 
@@ -152,7 +156,7 @@ export function FullscreenVideoCall({ conversationId, onClose }: FullscreenVideo
               if (isAudioEnabled && isStreaming) {
                 setTimeout(() => {
                   startListening()
-                }, 500)
+                }, AI_RESPONSE_RESTART_DELAY_MS)
               }
             }
             utterance.onerror = () => {
@@ -161,7 +165,7 @@ export function FullscreenVideoCall({ conversationId, onClose }: FullscreenVideo
               if (isAudioEnabled && isStreaming) {
                 setTimeout(() => {
                   startListening()
-                }, 500)
+                }, AI_RESPONSE_RESTART_DELAY_MS)
               }
             }
             
@@ -175,7 +179,7 @@ export function FullscreenVideoCall({ conversationId, onClose }: FullscreenVideo
             if (isAudioEnabled && isStreaming) {
               setTimeout(() => {
                 startListening()
-              }, 500)
+              }, AI_RESPONSE_RESTART_DELAY_MS)
             }
           }
         } else {
@@ -184,7 +188,7 @@ export function FullscreenVideoCall({ conversationId, onClose }: FullscreenVideo
           if (isAudioEnabled && isStreaming) {
             setTimeout(() => {
               startListening()
-            }, 500)
+            }, AI_RESPONSE_RESTART_DELAY_MS)
           }
         }
       } else {
@@ -193,7 +197,7 @@ export function FullscreenVideoCall({ conversationId, onClose }: FullscreenVideo
         if (isAudioEnabled && isStreaming) {
           setTimeout(() => {
             startListening()
-          }, 500)
+          }, AI_RESPONSE_RESTART_DELAY_MS)
         }
       }
     } catch (error) {
@@ -203,7 +207,7 @@ export function FullscreenVideoCall({ conversationId, onClose }: FullscreenVideo
       if (isAudioEnabled && isStreaming) {
         setTimeout(() => {
           startListening()
-        }, 500)
+        }, AI_RESPONSE_RESTART_DELAY_MS)
       }
     } finally {
       setIsProcessingRequest(false)

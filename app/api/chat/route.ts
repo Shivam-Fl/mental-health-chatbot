@@ -160,27 +160,8 @@ Assistant: `
     // Simple emotion detection based on keywords and context
     const detectedEmotion = detectEmotion(message, fullResponse)
 
-    // Save the conversation to database
-    const { error: saveError } = await supabase.from("messages").insert([
-      {
-        conversation_id: conversationId,
-        role: "user",
-        content: message,
-        message_type: messageType,
-        emotion_detected: detectedEmotion,
-      },
-      {
-        conversation_id: conversationId,
-        role: "assistant",
-        content: fullResponse,
-        message_type: "text",
-        emotion_detected: "supportive",
-      },
-    ])
-
-    if (saveError) {
-      console.error("Error saving messages:", saveError)
-    }
+    // NOTE: Messages are saved by the frontend (chat-interface.tsx)
+    // DO NOT save messages here to avoid duplication
 
     return Response.json({
       content: fullResponse,
@@ -202,7 +183,7 @@ Assistant: `
   }
 }
 
-// Enhanced emotion detection function with better keyword matching
+// Enhanced emotion detection function with better keyword matching and context awareness
 function detectEmotion(userMessage: string, aiResponse: string): string {
   const message = userMessage.toLowerCase()
 
@@ -212,6 +193,16 @@ function detectEmotion(userMessage: string, aiResponse: string): string {
     return "crisis"
   }
 
+  // Check for negative context modifiers that negate positive words
+  const negativeModifiers = ["not", "no", "dont", "don't", "isn't", "aren't", "wasn't", "weren't", "never", "without", "lack", "fucked", "fuck", "shit", "damn", "hell"]
+  const hasNegativeContext = negativeModifiers.some((mod) => message.includes(mod))
+
+  // Loneliness/isolation indicators (common in depression)
+  const lonelinessKeywords = ["lonely", "alone", "isolated", "no one", "nobody", "no friends", "no partner", "single", "by myself", "left out"]
+  if (lonelinessKeywords.some((keyword) => message.includes(keyword))) {
+    return "depression"
+  }
+
   // Anxiety indicators - expanded keywords
   const anxietyKeywords = ["anxious", "anxiety", "worried", "worry", "worrying", "panic", "panicking", "nervous", "scared", "fear", "fearful", "afraid", "overwhelmed", "stressed", "restless", "on edge", "tense"]
   if (anxietyKeywords.some((keyword) => message.includes(keyword))) {
@@ -219,7 +210,7 @@ function detectEmotion(userMessage: string, aiResponse: string): string {
   }
 
   // Depression indicators - expanded
-  const depressionKeywords = ["depressed", "depression", "sad", "sadness", "hopeless", "hopelessness", "empty", "emptiness", "worthless", "meaningless", "tired of life", "exhausted", "drained", "lonely", "alone", "isolated", "numb"]
+  const depressionKeywords = ["depressed", "depression", "sad", "sadness", "hopeless", "hopelessness", "empty", "emptiness", "worthless", "meaningless", "tired of life", "exhausted", "drained", "numb", "can't enjoy", "nothing matters"]
   if (depressionKeywords.some((keyword) => message.includes(keyword))) {
     return "depression"
   }
@@ -236,10 +227,12 @@ function detectEmotion(userMessage: string, aiResponse: string): string {
     return "anger"
   }
 
-  // Joy/positive indicators - expanded
-  const joyKeywords = ["happy", "happiness", "excited", "excitement", "great", "wonderful", "amazing", "fantastic", "joy", "joyful", "grateful", "gratitude", "thankful", "blessed", "good", "better", "relieved", "relief"]
-  if (joyKeywords.some((keyword) => message.includes(keyword))) {
-    return "joy"
+  // Joy/positive indicators - only if NO negative context
+  if (!hasNegativeContext) {
+    const joyKeywords = ["happy", "happiness", "excited", "excitement", "great", "wonderful", "amazing", "fantastic", "joy", "joyful", "grateful", "gratitude", "thankful", "blessed", "better", "relieved", "relief", "celebrating", "love it", "perfect"]
+    if (joyKeywords.some((keyword) => message.includes(keyword))) {
+      return "joy"
+    }
   }
 
   // Confusion indicators - expanded
