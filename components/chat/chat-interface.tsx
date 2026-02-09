@@ -360,19 +360,19 @@ export function ChatInterface({ user }: Readonly<ChatInterfaceProps>) {
 
           {/* Emotion Tracker */}
           {currentConversation && !showAnalytics && (
-            <div className="px-4 py-3 border-b border-border bg-card/50">
+            <div className="px-4 py-1 border-b border-border bg-card/50">
               <EmotionTracker conversationId={currentConversation.id} />
             </div>
           )}
 
           {/* Analytics toggle - simplified */}
           {currentConversation && !showAnalytics && (
-            <div className="px-4 py-2 border-b border-border bg-card/30 flex justify-end">
+            <div className="px-4 py-1 border-b border-border bg-card/30 flex justify-end">
               <Button 
                 variant="ghost" 
                 size="sm" 
                 onClick={() => setShowAnalytics(true)} 
-                className="text-xs"
+                className="text-xs h-7"
               >
                 <BarChart3 className="h-3 w-3 mr-2" />
                 View Analytics
@@ -383,18 +383,7 @@ export function ChatInterface({ user }: Readonly<ChatInterfaceProps>) {
           {showAnalytics && currentConversation ? (
             <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-muted/30">
               <div className="max-w-5xl mx-auto">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-semibold">Session Analytics</h2>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => setShowAnalytics(false)}
-                  >
-                    <X className="h-4 w-4 mr-2" />
-                    Close
-                  </Button>
-                </div>
-                <SessionAnalytics conversationId={currentConversation.id} />
+                <SessionAnalytics conversationId={currentConversation.id} onClose={() => setShowAnalytics(false)} />
               </div>
             </div>
           ) : (

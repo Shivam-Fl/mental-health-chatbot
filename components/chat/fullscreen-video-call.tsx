@@ -8,6 +8,10 @@ import { useVideoCall } from "@/hooks/use-video-call"
 import { useState, useCallback, useRef, useEffect } from "react"
 import { cn } from "@/lib/utils"
 
+// Constants for video call timing
+const AUTO_START_LISTENING_DELAY_MS = 1500
+const AI_RESPONSE_RESTART_DELAY_MS = 500
+
 interface FullscreenVideoCallProps {
   conversationId?: string
   onClose: () => void
@@ -85,9 +89,24 @@ export function FullscreenVideoCall({ conversationId, onClose }: FullscreenVideo
       // Small delay to allow modal to render
       setTimeout(() => {
         toggleStreaming()
-      }, 500)
+      }, AI_RESPONSE_RESTART_DELAY_MS)
     }
   }, [])
+
+  // Start listening once when streaming and audio are ready (one-time only)
+  useEffect(() => {
+    let timeout: NodeJS.Timeout
+    if (isStreaming && isAudioEnabled && !isListening && !isSpeaking) {
+      // Wait a bit for stream to stabilize, then start listening once
+      timeout = setTimeout(() => {
+        if (!isListening && !isSpeaking) {
+          console.log("Initial listening start")
+          startListening()
+        }
+      }, AUTO_START_LISTENING_DELAY_MS)
+    }
+    return () => clearTimeout(timeout)
+  }, [isStreaming, isAudioEnabled]) // Only depend on these, not listening/speaking state
 
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60)
@@ -136,8 +155,24 @@ export function FullscreenVideoCall({ conversationId, onClose }: FullscreenVideo
             utterance.volume = 0.8
             utterance.lang = "en-US"
             
-            utterance.onend = () => setIsSpeaking(false)
-            utterance.onerror = () => setIsSpeaking(false)
+            utterance.onend = () => {
+              setIsSpeaking(false)
+              // Auto-restart listening after AI finishes speaking for real-time flow
+              if (isAudioEnabled && isStreaming) {
+                setTimeout(() => {
+                  startListening()
+                }, AI_RESPONSE_RESTART_DELAY_MS)
+              }
+            }
+            utterance.onerror = () => {
+              setIsSpeaking(false)
+              // Auto-restart listening even on error
+              if (isAudioEnabled && isStreaming) {
+                setTimeout(() => {
+                  startListening()
+                }, AI_RESPONSE_RESTART_DELAY_MS)
+              }
+            }
             
             setTimeout(() => {
               window.speechSynthesis?.speak(utterance)
@@ -145,20 +180,44 @@ export function FullscreenVideoCall({ conversationId, onClose }: FullscreenVideo
           } catch (e) {
             console.error("TTS error:", e)
             setIsSpeaking(false)
+            // Auto-restart listening on TTS error
+            if (isAudioEnabled && isStreaming) {
+              setTimeout(() => {
+                startListening()
+              }, AI_RESPONSE_RESTART_DELAY_MS)
+            }
           }
         } else {
           setIsSpeaking(false)
+          // Auto-restart listening if no response
+          if (isAudioEnabled && isStreaming) {
+            setTimeout(() => {
+              startListening()
+            }, AI_RESPONSE_RESTART_DELAY_MS)
+          }
         }
       } else {
         setIsSpeaking(false)
+        // Auto-restart listening on API error
+        if (isAudioEnabled && isStreaming) {
+          setTimeout(() => {
+            startListening()
+          }, AI_RESPONSE_RESTART_DELAY_MS)
+        }
       }
     } catch (error) {
       console.error("Error processing video interaction:", error)
       setIsSpeaking(false)
+      // Auto-restart listening on error
+      if (isAudioEnabled && isStreaming) {
+        setTimeout(() => {
+          startListening()
+        }, AI_RESPONSE_RESTART_DELAY_MS)
+      }
     } finally {
       setIsProcessingRequest(false)
     }
-  }, [conversationId, lastVisualAnalysis, isProcessingRequest])
+  }, [conversationId, lastVisualAnalysis, isProcessingRequest, isAudioEnabled, isStreaming, startListening])
 
   const handleEndCall = () => {
     if (isStreaming) {
@@ -307,22 +366,6 @@ export function FullscreenVideoCall({ conversationId, onClose }: FullscreenVideo
           >
             <PhoneOff className="h-5 w-5 sm:h-6 sm:w-6" />
           </Button>
-
-          {isAudioEnabled && isStreaming && (
-            <Button
-              onClick={isListening ? stopListening : startListening}
-              variant="outline"
-              size="lg"
-              className={cn(
-                "rounded-full w-12 h-12 sm:w-14 sm:h-14 border-2 transition-all",
-                isListening
-                  ? "bg-red-500/80 border-red-400 text-white hover:bg-red-500 animate-pulse"
-                  : "bg-purple-500/80 border-purple-400 text-white hover:bg-purple-500"
-              )}
-            >
-              {isListening ? <MicOff className="h-4 w-4 sm:h-5 sm:w-5" /> : <Mic className="h-4 w-4 sm:h-5 sm:w-5" />}
-            </Button>
-          )}
         </div>
 
         {/* Instructions */}
@@ -330,10 +373,10 @@ export function FullscreenVideoCall({ conversationId, onClose }: FullscreenVideo
           <p className="text-sm text-white/70">
             {isStreaming 
               ? (isAudioEnabled 
-                  ? "Click the microphone to speak"
+                  ? (isListening ? "Listening... speak naturally" : "Processing your request...")
                   : "I can see your expressions for emotional understanding"
                 )
-              : "Click the call button to start"
+              : "Starting video call..."
             }
           </p>
         </div>

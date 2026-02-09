@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    // Verify conversation belongs to user
+    // Verify conversation belongs to user and get previous messages for context
     const { data: conversation, error: convError } = await supabase
       .from("conversations")
       .select("id, user_id")
@@ -82,6 +82,28 @@ export async function POST(req: NextRequest) {
 
     if (convError || !conversation) {
       return NextResponse.json({ error: "Conversation not found" }, { status: 404 })
+    }
+
+    // Get recent conversation history for context
+    const { data: recentMessages } = await supabase
+      .from("messages")
+      .select("role, content, emotion_detected")
+      .eq("conversation_id", conversationId)
+      .order("created_at", { ascending: false })
+      .limit(10)
+
+    // Build conversation context
+    let conversationContext = ""
+    if (recentMessages && recentMessages.length > 0) {
+      conversationContext = "\n\nRecent conversation history:\n"
+      // Reverse to show chronological order
+      recentMessages.reverse().forEach(msg => {
+        const emotionTag = msg.emotion_detected && msg.emotion_detected !== 'neutral'
+          ? ` [${msg.emotion_detected}]`
+          : ""
+        conversationContext += `${msg.role === "user" ? "User" : "Assistant"}${emotionTag}: ${msg.content}\n`
+      })
+      conversationContext += "\n---\n"
     }
 
     // Analyze emotion from both audio and video

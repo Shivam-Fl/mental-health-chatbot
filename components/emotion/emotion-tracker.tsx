@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { createClient } from "@/lib/supabase/client"
 import { EmotionIndicator } from "../chat/emotion-indicator"
-import { TrendingUp, TrendingDown, Minus } from "lucide-react"
+import { TrendingUp, TrendingDown, Minus, ChevronDown, ChevronUp } from "lucide-react"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 
 interface RecentEmotion {
   emotion_type: string
@@ -22,6 +23,7 @@ export function EmotionTracker({ conversationId }: EmotionTrackerProps) {
   const [recentEmotions, setRecentEmotions] = useState<RecentEmotion[]>([])
   const [emotionTrend, setEmotionTrend] = useState<"improving" | "declining" | "stable">("stable")
   const [isLoading, setIsLoading] = useState(true)
+  const [isOpen, setIsOpen] = useState(true) // Collapsible state
 
   const supabase = createClient()
 
@@ -112,33 +114,43 @@ export function EmotionTracker({ conversationId }: EmotionTrackerProps) {
   }
 
   return (
-    <Card className="mb-4">
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="text-sm">Emotion Tracking</CardTitle>
-            <CardDescription className="text-xs">Your recent emotional state</CardDescription>
-          </div>
-          <Badge variant="outline" className={getTrendColor()}>
-            {getTrendIcon()}
-            <span className="ml-1 capitalize">{emotionTrend}</span>
-          </Badge>
-        </div>
-      </CardHeader>
-      <CardContent className="pt-0">
-        <div className="flex flex-wrap gap-2 mb-3">
-          {recentEmotions.slice(0, 5).map((emotion, index) => (
-            <EmotionIndicator key={index} emotion={emotion.emotion_type} className="text-xs" />
-          ))}
-        </div>
+    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+      <Card className="border-0 shadow-none">
+        <CollapsibleTrigger asChild>
+          <CardHeader className="py-2 px-3 cursor-pointer hover:bg-muted/50 transition-colors">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                <CardTitle className="text-xs font-medium">Emotion Tracking</CardTitle>
+                <span className="text-xs text-muted-foreground hidden sm:inline">•</span>
+                <CardDescription className="text-xs hidden sm:inline truncate">Your recent emotional state</CardDescription>
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <Badge variant="outline" className={`${getTrendColor()} text-xs py-0 h-5`}>
+                  {getTrendIcon()}
+                  <span className="ml-1 capitalize text-xs">{emotionTrend}</span>
+                </Badge>
+                {isOpen ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+              </div>
+            </div>
+          </CardHeader>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <CardContent className="px-3 py-2">
+            <div className="flex flex-wrap gap-2 mb-2">
+              {recentEmotions.slice(0, 5).map((emotion, index) => (
+                <EmotionIndicator key={index} emotion={emotion.emotion_type} className="text-xs" />
+              ))}
+            </div>
 
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <span>Last {recentEmotions.length} emotions detected</span>
-          <Button variant="ghost" size="sm" className="h-6 text-xs" asChild>
-            <a href="/dashboard">View Details</a>
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>Last {recentEmotions.length} emotions detected</span>
+              <Button variant="ghost" size="sm" className="h-6 text-xs" asChild>
+                <a href="/dashboard">View Details</a>
+              </Button>
+            </div>
+          </CardContent>
+        </CollapsibleContent>
+      </Card>
+    </Collapsible>
   )
 }
