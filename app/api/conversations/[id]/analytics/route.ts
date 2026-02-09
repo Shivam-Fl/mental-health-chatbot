@@ -128,6 +128,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 }
 
 // Calculate real confidence score based on keyword density in the message
+// Confidence ranges from 0.4 (weak match) to 0.95 (strong match)
+const WORDS_PER_KEYWORD_GROUP = 10 // Expected words per keyword match for density calculation
+
 function calculateEmotionConfidence(content: string, emotion: string): number {
   if (!content || !emotion) return 0.5
 
@@ -148,6 +151,7 @@ function calculateEmotionConfidence(content: string, emotion: string): number {
   }
 
   const keywords = emotionKeywords[emotion] || []
+  // Safe: early return before any division involving keywords.length
   if (keywords.length === 0) return 0.5
 
   const matchCount = keywords.filter(keyword => text.includes(keyword)).length
@@ -155,7 +159,7 @@ function calculateEmotionConfidence(content: string, emotion: string): number {
 
   // Base confidence from keyword matches (0.4 to 0.95)
   const keywordRatio = matchCount / keywords.length
-  const densityRatio = Math.min(matchCount / Math.max(wordCount / 10, 1), 1)
+  const densityRatio = Math.min(matchCount / Math.max(wordCount / WORDS_PER_KEYWORD_GROUP, 1), 1)
 
   // Combine keyword match ratio and density for confidence
   const confidence = 0.4 + (keywordRatio * 0.35) + (densityRatio * 0.2)

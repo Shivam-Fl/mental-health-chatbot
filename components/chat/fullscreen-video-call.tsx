@@ -221,10 +221,18 @@ export function FullscreenVideoCall({ conversationId, onClose }: FullscreenVideo
             }, SPEECH_KEEPALIVE_INTERVAL_MS)
             
             utterance.onend = () => {
+              if (keepAliveRef.current) {
+                clearInterval(keepAliveRef.current)
+                keepAliveRef.current = null
+              }
               setIsSpeaking(false)
               safeRestartListening()
             }
             utterance.onerror = () => {
+              if (keepAliveRef.current) {
+                clearInterval(keepAliveRef.current)
+                keepAliveRef.current = null
+              }
               setIsSpeaking(false)
               safeRestartListening()
             }
