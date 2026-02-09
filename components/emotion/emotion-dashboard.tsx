@@ -217,13 +217,13 @@ export function EmotionDashboard() {
   const getInsightIcon = (type: string) => {
     switch (type) {
       case "improvement":
-        return <TrendingUp className="h-4 w-4 text-green-600" />
+        return <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />
       case "concern":
-        return <TrendingDown className="h-4 w-4 text-red-600" />
+        return <TrendingDown className="h-4 w-4 text-red-600 dark:text-red-400" />
       case "pattern":
-        return <Activity className="h-4 w-4 text-blue-600" />
+        return <Activity className="h-4 w-4 text-blue-600 dark:text-blue-400" />
       case "recommendation":
-        return <Brain className="h-4 w-4 text-purple-600" />
+        return <Brain className="h-4 w-4 text-purple-600 dark:text-purple-400" />
       default:
         return <Heart className="h-4 w-4 text-muted-foreground" />
     }
@@ -336,7 +336,7 @@ export function EmotionDashboard() {
                   </div>
                   <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
                     <span className="text-sm font-medium">Positive Emotions</span>
-                    <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/20 text-base font-semibold">
+                    <Badge variant="outline" className="bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20 text-base font-semibold">
                       {Math.round((moodDistribution.find((m) => m.emotion === "joy")?.percentage || 0) * 100) / 100}%
                     </Badge>
                   </div>
@@ -361,9 +361,10 @@ export function EmotionDashboard() {
                     <YAxis className="text-xs" />
                     <Tooltip 
                       contentStyle={{ 
-                        backgroundColor: 'hsl(var(--card))',
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '8px'
+                        backgroundColor: 'var(--card)',
+                        border: '1px solid var(--border)',
+                        borderRadius: '8px',
+                        color: 'var(--card-foreground)'
                       }}
                     />
                     <Line type="monotone" dataKey="joy" stroke="#22c55e" strokeWidth={2} dot={{ r: 4 }} />
@@ -390,12 +391,13 @@ export function EmotionDashboard() {
                     <YAxis className="text-xs" />
                     <Tooltip 
                       contentStyle={{ 
-                        backgroundColor: 'hsl(var(--card))',
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '8px'
+                        backgroundColor: 'var(--card)',
+                        border: '1px solid var(--border)',
+                        borderRadius: '8px',
+                        color: 'var(--card-foreground)'
                       }}
                     />
-                    <Bar dataKey="count" fill="hsl(var(--primary))" radius={[8, 8, 0, 0]} />
+                    <Bar dataKey="count" fill="var(--primary)" radius={[8, 8, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>

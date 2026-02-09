@@ -99,9 +99,9 @@ export function FullscreenAudioCall({ conversationId, onClose }: FullscreenAudio
             <div className="flex items-center gap-3 justify-center">
               <Badge variant="outline" className={cn(
                 "transition-colors",
-                isListening && "bg-green-500/10 text-green-600 border-green-500/20",
-                isSpeaking && "bg-blue-500/10 text-blue-600 border-blue-500/20",
-                isProcessing && "bg-yellow-500/10 text-yellow-600 border-yellow-500/20"
+                isListening && "bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20",
+                isSpeaking && "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20",
+                isProcessing && "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border-yellow-500/20"
               )}>
                 <div className={cn(
                   "w-2 h-2 rounded-full mr-2",
@@ -170,7 +170,7 @@ export function FullscreenAudioCall({ conversationId, onClose }: FullscreenAudio
               isListening && "border-green-500 bg-green-50 dark:bg-green-950/30"
             )}
           >
-            {isListening ? <MicOff className="h-6 w-6 text-green-600" /> : <Mic className="h-6 w-6" />}
+            {isListening ? <MicOff className="h-6 w-6 text-green-600 dark:text-green-400" /> : <Mic className="h-6 w-6" />}
           </Button>
 
           <Button

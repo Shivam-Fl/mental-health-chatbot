@@ -11,9 +11,9 @@ interface CrisisAlertProps {
 export function CrisisAlert({ onDismiss }: CrisisAlertProps) {
   return (
     <Alert className="border-red-500/50 bg-red-500/10 mb-4">
-      <AlertTriangle className="h-4 w-4 text-red-600" />
-      <AlertTitle className="text-red-700">Immediate Support Available</AlertTitle>
-      <AlertDescription className="text-red-600 space-y-3">
+      <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />
+      <AlertTitle className="text-red-700 dark:text-red-300">Immediate Support Available</AlertTitle>
+      <AlertDescription className="text-red-600 dark:text-red-300 space-y-3">
         <p>
           If you're having thoughts of suicide or self-harm, please reach out for immediate help. You're not alone, and
           support is available 24/7.
@@ -23,7 +23,7 @@ export function CrisisAlert({ onDismiss }: CrisisAlertProps) {
           <Button
             variant="outline"
             size="sm"
-            className="border-red-500 text-red-700 hover:bg-red-50 bg-transparent"
+            className="border-red-500 text-red-700 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-950/30 bg-transparent"
             onClick={() => window.open("tel:988", "_self")}
           >
             <Phone className="h-4 w-4 mr-2" />
@@ -33,7 +33,7 @@ export function CrisisAlert({ onDismiss }: CrisisAlertProps) {
           <Button
             variant="outline"
             size="sm"
-            className="border-red-500 text-red-700 hover:bg-red-50 bg-transparent"
+            className="border-red-500 text-red-700 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-950/30 bg-transparent"
             onClick={() => window.open("sms:741741?body=HOME", "_self")}
           >
             <MessageSquare className="h-4 w-4 mr-2" />
@@ -42,7 +42,7 @@ export function CrisisAlert({ onDismiss }: CrisisAlertProps) {
         </div>
 
         {onDismiss && (
-          <Button variant="ghost" size="sm" onClick={onDismiss} className="text-red-600 hover:text-red-700">
+          <Button variant="ghost" size="sm" onClick={onDismiss} className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300">
             I understand
           </Button>
         )}
