@@ -166,6 +166,7 @@ Assistant: `
     return Response.json({
       content: fullResponse,
       emotion_detected: detectedEmotion,
+      user_emotion: detectedEmotion,
       timestamp: new Date().toISOString(),
     })
   } catch (error) {

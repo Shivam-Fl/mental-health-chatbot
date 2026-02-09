@@ -32,17 +32,25 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     // Basic metrics
     const totalMessages = messages.length
-    const sessionStart = new Date(conversation.created_at)
-    const sessionEnd = new Date(conversation.updated_at)
-    const sessionDuration = Math.max(1, Math.round((sessionEnd.getTime() - sessionStart.getTime()) / (1000 * 60))) // minutes, at least 1
 
-    // Emotion trends from messages' emotion_detected field
+    // Calculate session duration from actual message timestamps
+    let sessionDuration = 1 // minimum 1 minute
+    if (messages.length >= 2) {
+      const sortedMessages = [...messages].sort(
+        (a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      )
+      const firstMessageTime = new Date(sortedMessages[0].created_at).getTime()
+      const lastMessageTime = new Date(sortedMessages[sortedMessages.length - 1].created_at).getTime()
+      sessionDuration = Math.max(1, Math.round((lastMessageTime - firstMessageTime) / (1000 * 60)))
+    }
+
+    // Emotion trends from messages' emotion_detected field with real confidence
     const emotionTrends = messages
       .filter((m: any) => m.emotion_detected && m.emotion_detected !== "neutral")
       .map((m: any) => ({
         timestamp: m.created_at,
         emotion: m.emotion_detected,
-        confidence: 0.8, // Default confidence for text-based detection
+        confidence: calculateEmotionConfidence(m.content, m.emotion_detected),
       }))
       .sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
 
@@ -117,4 +125,40 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     console.error("Analytics error:", error)
     return NextResponse.json({ error: "Failed to generate analytics" }, { status: 500 })
   }
+}
+
+// Calculate real confidence score based on keyword density in the message
+function calculateEmotionConfidence(content: string, emotion: string): number {
+  if (!content || !emotion) return 0.5
+
+  const text = content.toLowerCase()
+
+  const emotionKeywords: Record<string, string[]> = {
+    crisis: ["suicide", "suicidal", "kill myself", "end it all", "want to die", "self-harm", "hurt myself"],
+    anxiety: ["anxious", "anxiety", "worried", "worry", "panic", "nervous", "scared", "overwhelmed", "restless", "tense"],
+    depression: ["depressed", "depression", "sad", "hopeless", "empty", "worthless", "numb", "exhausted", "lonely"],
+    stress: ["stressed", "stress", "pressure", "burden", "overwhelmed", "burnt out", "burnout", "too much"],
+    anger: ["angry", "anger", "furious", "mad", "frustrated", "irritated", "rage", "hate", "pissed"],
+    joy: ["happy", "excited", "great", "wonderful", "amazing", "grateful", "thankful", "blessed", "relieved"],
+    fear: ["afraid", "fear", "terrified", "scared", "frightened", "dread", "phobia"],
+    sadness: ["sad", "crying", "tears", "grief", "loss", "mourning", "heartbroken"],
+    confusion: ["confused", "uncertain", "unsure", "lost", "puzzled", "bewildered"],
+    surprise: ["surprised", "shocked", "unexpected", "amazed", "astonished"],
+    disgust: ["disgusted", "disgusting", "repulsed", "revolting"],
+  }
+
+  const keywords = emotionKeywords[emotion] || []
+  if (keywords.length === 0) return 0.5
+
+  const matchCount = keywords.filter(keyword => text.includes(keyword)).length
+  const wordCount = text.split(/\s+/).length
+
+  // Base confidence from keyword matches (0.4 to 0.95)
+  const keywordRatio = matchCount / keywords.length
+  const densityRatio = Math.min(matchCount / Math.max(wordCount / 10, 1), 1)
+
+  // Combine keyword match ratio and density for confidence
+  const confidence = 0.4 + (keywordRatio * 0.35) + (densityRatio * 0.2)
+
+  return Math.min(Math.round(confidence * 100) / 100, 0.95)
 }

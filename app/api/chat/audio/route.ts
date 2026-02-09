@@ -130,7 +130,7 @@ export async function POST(req: Request) {
       contents: [{ role: "user", parts: [{ text: conversationHistory }] }],
       generationConfig: {
         temperature: 0.8, // Slightly higher for more natural speech
-        maxOutputTokens: 300, // Shorter for audio responses
+        maxOutputTokens: 800, // Enough for complete audio responses
       },
     })
 

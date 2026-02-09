@@ -11,6 +11,8 @@ import { cn } from "@/lib/utils"
 // Constants for video call timing
 const AUTO_START_LISTENING_DELAY_MS = 1500
 const AI_RESPONSE_RESTART_DELAY_MS = 500
+const SAFETY_RESTART_TIMEOUT_MS = 30000 // Safety timeout to prevent stuck state
+const SPEECH_KEEPALIVE_INTERVAL_MS = 10000 // Chrome speechSynthesis keepalive
 
 interface FullscreenVideoCallProps {
   conversationId?: string
@@ -32,6 +34,13 @@ export function FullscreenVideoCall({ conversationId, onClose }: FullscreenVideo
   const [isProcessingRequest, setIsProcessingRequest] = useState(false)
   const [callDuration, setCallDuration] = useState(0)
   const lastRequestTimeRef = useRef<number>(0)
+
+  // Refs to avoid stale closures in callbacks
+  const isAudioEnabledRef = useRef(true)
+  const isStreamingRef = useRef(false)
+  const isSpeakingRef = useRef(false)
+  const safetyTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const keepAliveRef = useRef<NodeJS.Timeout | null>(null)
 
   const { 
     isStreaming, 
@@ -73,6 +82,19 @@ export function FullscreenVideoCall({ conversationId, onClose }: FullscreenVideo
     },
   })
 
+  // Keep refs in sync
+  useEffect(() => {
+    isAudioEnabledRef.current = isAudioEnabled
+  }, [isAudioEnabled])
+
+  useEffect(() => {
+    isStreamingRef.current = isStreaming
+  }, [isStreaming])
+
+  useEffect(() => {
+    isSpeakingRef.current = isSpeaking
+  }, [isSpeaking])
+
   // Track call duration
   useEffect(() => {
     if (isStreaming) {
@@ -99,7 +121,7 @@ export function FullscreenVideoCall({ conversationId, onClose }: FullscreenVideo
     if (isStreaming && isAudioEnabled && !isListening && !isSpeaking) {
       // Wait a bit for stream to stabilize, then start listening once
       timeout = setTimeout(() => {
-        if (!isListening && !isSpeaking) {
+        if (!isListening && !isSpeakingRef.current) {
           console.log("Initial listening start")
           startListening()
         }
@@ -108,11 +130,36 @@ export function FullscreenVideoCall({ conversationId, onClose }: FullscreenVideo
     return () => clearTimeout(timeout)
   }, [isStreaming, isAudioEnabled]) // Only depend on these, not listening/speaking state
 
+  // Cleanup keepalive and safety timeouts
+  useEffect(() => {
+    return () => {
+      if (safetyTimeoutRef.current) clearTimeout(safetyTimeoutRef.current)
+      if (keepAliveRef.current) clearInterval(keepAliveRef.current)
+    }
+  }, [])
+
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60)
     const secs = seconds % 60
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
   }
+
+  // Helper to safely restart listening using refs to avoid stale closures
+  const safeRestartListening = useCallback(() => {
+    if (safetyTimeoutRef.current) {
+      clearTimeout(safetyTimeoutRef.current)
+      safetyTimeoutRef.current = null
+    }
+    if (keepAliveRef.current) {
+      clearInterval(keepAliveRef.current)
+      keepAliveRef.current = null
+    }
+    if (isAudioEnabledRef.current && isStreamingRef.current) {
+      setTimeout(() => {
+        startListening()
+      }, AI_RESPONSE_RESTART_DELAY_MS)
+    }
+  }, [startListening])
 
   const processVideoInteraction = useCallback(async (transcript: string, emotion?: string | null, confidence?: number) => {
     if (!conversationId || !transcript || !transcript.trim()) {
@@ -123,6 +170,16 @@ export function FullscreenVideoCall({ conversationId, onClose }: FullscreenVideo
     if (isProcessingRequest || (now - lastRequestTimeRef.current) < 2000) {
       return
     }
+
+    // Set a safety timeout to prevent being stuck forever
+    if (safetyTimeoutRef.current) clearTimeout(safetyTimeoutRef.current)
+    safetyTimeoutRef.current = setTimeout(() => {
+      console.warn("Safety timeout: resetting stuck state")
+      setIsSpeaking(false)
+      setIsProcessingRequest(false)
+      window.speechSynthesis?.cancel()
+      safeRestartListening()
+    }, SAFETY_RESTART_TIMEOUT_MS)
 
     try {
       setIsProcessingRequest(true)
@@ -154,24 +211,22 @@ export function FullscreenVideoCall({ conversationId, onClose }: FullscreenVideo
             utterance.pitch = 1.0
             utterance.volume = 0.8
             utterance.lang = "en-US"
+
+            // Chrome workaround: keep speechSynthesis alive for long utterances
+            keepAliveRef.current = setInterval(() => {
+              if (window.speechSynthesis?.speaking) {
+                window.speechSynthesis.pause()
+                window.speechSynthesis.resume()
+              }
+            }, SPEECH_KEEPALIVE_INTERVAL_MS)
             
             utterance.onend = () => {
               setIsSpeaking(false)
-              // Auto-restart listening after AI finishes speaking for real-time flow
-              if (isAudioEnabled && isStreaming) {
-                setTimeout(() => {
-                  startListening()
-                }, AI_RESPONSE_RESTART_DELAY_MS)
-              }
+              safeRestartListening()
             }
             utterance.onerror = () => {
               setIsSpeaking(false)
-              // Auto-restart listening even on error
-              if (isAudioEnabled && isStreaming) {
-                setTimeout(() => {
-                  startListening()
-                }, AI_RESPONSE_RESTART_DELAY_MS)
-              }
+              safeRestartListening()
             }
             
             setTimeout(() => {
@@ -180,50 +235,32 @@ export function FullscreenVideoCall({ conversationId, onClose }: FullscreenVideo
           } catch (e) {
             console.error("TTS error:", e)
             setIsSpeaking(false)
-            // Auto-restart listening on TTS error
-            if (isAudioEnabled && isStreaming) {
-              setTimeout(() => {
-                startListening()
-              }, AI_RESPONSE_RESTART_DELAY_MS)
-            }
+            safeRestartListening()
           }
         } else {
           setIsSpeaking(false)
-          // Auto-restart listening if no response
-          if (isAudioEnabled && isStreaming) {
-            setTimeout(() => {
-              startListening()
-            }, AI_RESPONSE_RESTART_DELAY_MS)
-          }
+          safeRestartListening()
         }
       } else {
         setIsSpeaking(false)
-        // Auto-restart listening on API error
-        if (isAudioEnabled && isStreaming) {
-          setTimeout(() => {
-            startListening()
-          }, AI_RESPONSE_RESTART_DELAY_MS)
-        }
+        safeRestartListening()
       }
     } catch (error) {
       console.error("Error processing video interaction:", error)
       setIsSpeaking(false)
-      // Auto-restart listening on error
-      if (isAudioEnabled && isStreaming) {
-        setTimeout(() => {
-          startListening()
-        }, AI_RESPONSE_RESTART_DELAY_MS)
-      }
+      safeRestartListening()
     } finally {
       setIsProcessingRequest(false)
     }
-  }, [conversationId, lastVisualAnalysis, isProcessingRequest, isAudioEnabled, isStreaming, startListening])
+  }, [conversationId, lastVisualAnalysis, isProcessingRequest, startListening, safeRestartListening])
 
   const handleEndCall = () => {
     if (isStreaming) {
       toggleStreaming()
     }
     window.speechSynthesis?.cancel()
+    if (safetyTimeoutRef.current) clearTimeout(safetyTimeoutRef.current)
+    if (keepAliveRef.current) clearInterval(keepAliveRef.current)
     onClose()
   }
 
@@ -288,7 +325,7 @@ export function FullscreenVideoCall({ conversationId, onClose }: FullscreenVideo
                   🔊 Speaking
                 </Badge>
               )}
-              {isProcessingRequest && (
+              {isProcessingRequest && !isSpeaking && (
                 <Badge className="bg-yellow-500 text-white">
                   ⏳ Processing
                 </Badge>
@@ -373,7 +410,13 @@ export function FullscreenVideoCall({ conversationId, onClose }: FullscreenVideo
           <p className="text-sm text-white/70">
             {isStreaming 
               ? (isAudioEnabled 
-                  ? (isListening ? "Listening... speak naturally" : "Processing your request...")
+                  ? (isListening 
+                      ? "Listening... speak naturally" 
+                      : (isSpeaking 
+                          ? "Aura is responding..." 
+                          : (isProcessingRequest 
+                              ? "Processing your request..." 
+                              : "Ready — speak when you're ready")))
                   : "I can see your expressions for emotional understanding"
                 )
               : "Starting video call..."

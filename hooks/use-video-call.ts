@@ -352,9 +352,7 @@ export function useVideoCall(options: VideoCallOptions = {}) {
     }
 
     try {
-      setIsProcessing(true)
-      optionsRef.current.onStatusChange?.("processing")
-
+      // Don't change global processing status for emotion detection - it's a background task
       const canvas = canvasRef.current
       const video = videoRef.current
       const ctx = canvas.getContext("2d")
@@ -390,9 +388,6 @@ export function useVideoCall(options: VideoCallOptions = {}) {
       optionsRef.current.onVisualAnalysis?.(emotion)
     } catch (error) {
       console.error("Error analyzing frame:", error)
-    } finally {
-      setIsProcessing(false)
-      optionsRef.current.onStatusChange?.(isStreamingRef.current ? "streaming" : "idle")
     }
   }, [isVideoEnabled])
 
@@ -463,8 +458,8 @@ async function analyzeEmotionWithFaceAPI(canvas: HTMLCanvasElement, modelsLoaded
     // Detect faces and expressions with more sensitive settings
     const detections = await faceapi
       .detectAllFaces(canvas, new faceapi.TinyFaceDetectorOptions({ 
-        inputSize: 320, 
-        scoreThreshold: 0.3  // Lower threshold for better detection
+        inputSize: 416, // Larger input for better detection accuracy
+        scoreThreshold: 0.2  // Lower threshold for better face detection
       }))
       .withFaceExpressions()
 

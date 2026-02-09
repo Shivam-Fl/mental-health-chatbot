@@ -251,6 +251,20 @@ export function ChatInterface({ user }: Readonly<ChatInterfaceProps>) {
 
       const aiResponse = await response.json()
       const responseContent = aiResponse.content || aiResponse.response || aiResponse.message || "I'm here to help."
+      const userEmotion = aiResponse.user_emotion || aiResponse.emotion_detected || null
+
+      // Update user message with detected emotion
+      if (userEmotion && savedUserMessage) {
+        await supabase
+          .from("messages")
+          .update({ emotion_detected: userEmotion })
+          .eq("id", savedUserMessage.id)
+
+        // Update local state too
+        setMessages((prev) => prev.map((msg) => 
+          msg.id === savedUserMessage.id ? { ...msg, emotion_detected: userEmotion } : msg
+        ))
+      }
 
       // Add AI response to messages
       const assistantMessage: Message = {

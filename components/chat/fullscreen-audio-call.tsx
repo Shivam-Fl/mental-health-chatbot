@@ -18,6 +18,7 @@ export function FullscreenAudioCall({ conversationId, onClose }: FullscreenAudio
   const [currentTranscript, setCurrentTranscript] = useState("")
   const [aiResponse, setAiResponse] = useState("")
   const [callDuration, setCallDuration] = useState(0)
+  const [callStarted, setCallStarted] = useState(false)
 
   const { isListening, isProcessing, isSpeaking, transcript, error, toggleListening, processAudio, stopSpeaking } =
     useAudioStream({
@@ -32,18 +33,22 @@ export function FullscreenAudioCall({ conversationId, onClose }: FullscreenAudio
       },
       onStatusChange: (newStatus) => {
         setStatus(newStatus)
+        // Mark call as started when first listening begins
+        if (newStatus === "listening" && !callStarted) {
+          setCallStarted(true)
+        }
       },
     })
 
-  // Track call duration
+  // Track call duration continuously once started
   useEffect(() => {
-    if (isListening) {
+    if (callStarted) {
       const interval = setInterval(() => {
         setCallDuration((prev) => prev + 1)
       }, 1000)
       return () => clearInterval(interval)
     }
-  }, [isListening])
+  }, [callStarted])
 
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60)
@@ -112,7 +117,7 @@ export function FullscreenAudioCall({ conversationId, onClose }: FullscreenAudio
                 )} />
                 {isListening ? "Listening" : isSpeaking ? "Speaking" : isProcessing ? "Processing" : "Ready"}
               </Badge>
-              {isListening && (
+              {callStarted && (
                 <Badge variant="secondary" className="font-mono">
                   {formatDuration(callDuration)}
                 </Badge>
