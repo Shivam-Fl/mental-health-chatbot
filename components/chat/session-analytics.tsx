@@ -5,11 +5,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
-import { TrendingUp, Clock, MessageSquare, Heart, Brain, Target, RefreshCw } from "lucide-react"
+import { TrendingUp, Clock, MessageSquare, Heart, Brain, Target, RefreshCw, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 interface SessionAnalyticsProps {
   conversationId: string
+  onClose?: () => void
 }
 
 interface AnalyticsData {
@@ -32,7 +33,7 @@ interface AnalyticsData {
   }
 }
 
-export function SessionAnalytics({ conversationId }: SessionAnalyticsProps) {
+export function SessionAnalytics({ conversationId, onClose }: SessionAnalyticsProps) {
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -118,16 +119,28 @@ export function SessionAnalytics({ conversationId }: SessionAnalyticsProps) {
       {/* Header with refresh button */}
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold">Session Analytics</h3>
-        <Button 
-          variant="outline" 
-          size="sm"
-          onClick={loadAnalytics}
-          disabled={loading}
-          className="gap-2"
-        >
-          <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-          Refresh
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={loadAnalytics}
+            disabled={loading}
+            className="gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+          {onClose && (
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={onClose}
+            >
+              <X className="h-4 w-4 mr-2" />
+              Close
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Session Overview */}

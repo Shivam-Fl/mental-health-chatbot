@@ -76,11 +76,13 @@ export function useAudioStream(options: AudioStreamOptions = {}) {
         }
 
         recognitionRef.current.onend = () => {
+          // Only restart if we're still supposed to be listening AND not processing/speaking
           if (isListeningRef.current) {
-            // Restart recognition if we're still supposed to be listening
             try {
               setTimeout(() => {
+                // Double check we're still listening and not processing
                 if (isListeningRef.current && recognitionRef.current) {
+                  console.log("[DEBUG] Auto-restarting recognition")
                   recognitionRef.current.start()
                 }
               }, 200)
@@ -192,6 +194,19 @@ export function useAudioStream(options: AudioStreamOptions = {}) {
       if (!transcript.trim()) return
 
       console.log("[DEBUG] Processing audio with:", { transcript, conversationId, faceEmotion })
+      
+      // Stop listening while processing
+      if (recognitionRef.current && isListeningRef.current) {
+        try {
+          console.log("[DEBUG] Stopping recognition for processing")
+          recognitionRef.current.stop()
+          isListeningRef.current = false
+          setIsListening(false)
+        } catch (e) {
+          console.log("Error stopping recognition:", e)
+        }
+      }
+      
       setIsProcessing(true)
       optionsRef.current.onStatusChange?.("processing")
 
@@ -212,6 +227,7 @@ export function useAudioStream(options: AudioStreamOptions = {}) {
         if (!response.ok) throw new Error("Failed to process audio")
 
         const data = await response.json()
+        console.log("[DEBUG] Audio API response:", data)
 
         // Speak the response
         if (data.response) {
@@ -221,16 +237,27 @@ export function useAudioStream(options: AudioStreamOptions = {}) {
         // Clear transcript after processing
         setTranscript("")
         audioChunksRef.current = []
+        
+        // Restart listening after speaking completes
+        console.log("[DEBUG] Restarting listening after response")
+        setTimeout(() => {
+          startListening()
+        }, 500)
       } catch (err) {
         const error = err instanceof Error ? err : new Error("Failed to process audio")
         setError(error.message)
         optionsRef.current.onError?.(error)
+        
+        // Restart listening even on error
+        setTimeout(() => {
+          startListening()
+        }, 500)
       } finally {
         setIsProcessing(false)
-        optionsRef.current.onStatusChange?.(isListeningRef.current ? "listening" : "idle")
+        optionsRef.current.onStatusChange?.("idle")
       }
     },
-    [],
+    [startListening],
   )
 
   const speakText = useCallback(
@@ -260,40 +287,13 @@ export function useAudioStream(options: AudioStreamOptions = {}) {
 
         utterance.onend = () => {
           setIsSpeaking(false)
-          // Auto-restart listening after AI finishes speaking for real-time flow
-          if (isListeningRef.current) {
-            optionsRef.current.onStatusChange?.("listening")
-            // Restart recognition if it was stopped
-            if (recognitionRef.current && !isListeningRef.current) {
-              setTimeout(() => {
-                try {
-                  recognitionRef.current?.start()
-                } catch (e) {
-                  console.log("Recognition already started")
-                }
-              }, RECOGNITION_RESTART_DELAY_MS)
-            }
-          } else {
-            optionsRef.current.onStatusChange?.("idle")
-          }
+          optionsRef.current.onStatusChange?.("idle")
           resolve()
         }
 
         utterance.onerror = (event) => {
           setIsSpeaking(false)
-          // Auto-restart listening even on error
-          if (isListeningRef.current) {
-            optionsRef.current.onStatusChange?.("listening")
-            setTimeout(() => {
-              try {
-                recognitionRef.current?.start()
-              } catch (e) {
-                console.log("Recognition already started")
-              }
-            }, RECOGNITION_RESTART_DELAY_MS)
-          } else {
-            optionsRef.current.onStatusChange?.("idle")
-          }
+          optionsRef.current.onStatusChange?.("idle")
           reject(new Error(`Speech synthesis error: ${event.error}`))
         }
 
