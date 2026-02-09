@@ -11,10 +11,14 @@ interface EmotionIndicatorProps {
 const emotionConfig = {
   anxiety: { icon: AlertTriangle, color: "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border-yellow-500/20", label: "Anxiety" },
   depression: { icon: Frown, color: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20", label: "Depression" },
+  sadness: { icon: Frown, color: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20", label: "Sadness" },
   anger: { icon: Zap, color: "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20", label: "Anger" },
   joy: { icon: Smile, color: "bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20", label: "Joy" },
   stress: { icon: AlertTriangle, color: "bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20", label: "Stress" },
   confusion: { icon: HelpCircle, color: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20", label: "Confusion" },
+  fear: { icon: AlertTriangle, color: "bg-purple-600/10 text-purple-700 dark:text-purple-400 border-purple-600/20", label: "Fear" },
+  surprise: { icon: HelpCircle, color: "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/20", label: "Surprise" },
+  disgust: { icon: Frown, color: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20", label: "Disgust" },
   crisis: { icon: Heart, color: "bg-red-600/10 text-red-700 dark:text-red-400 border-red-600/20", label: "Crisis" },
   neutral: { icon: Minus, color: "bg-muted text-muted-foreground border-border", label: "Neutral" },
 }

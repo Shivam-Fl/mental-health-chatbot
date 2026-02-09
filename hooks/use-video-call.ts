@@ -487,13 +487,13 @@ async function analyzeEmotionWithFaceAPI(canvas: HTMLCanvasElement, modelsLoaded
 
     // Enhanced emotion detection with weighted analysis
     const emotionWeights = {
-      'happy': 1.2,      // Boost happy detection
-      'sad': 1.3,        // Boost sad detection  
-      'angry': 1.4,      // Boost angry detection
-      'fearful': 1.3,    // Boost fearful detection
-      'surprised': 1.1,  // Slight boost for surprise
-      'disgusted': 1.2,  // Boost disgust detection
-      'neutral': 0.8     // Reduce neutral bias
+      'happy': 1.5,      // Boost happy detection more
+      'sad': 1.6,        // Boost sad detection more  
+      'angry': 1.7,      // Boost angry detection more
+      'fearful': 1.5,    // Boost fearful detection more
+      'surprised': 1.3,  // Boost surprise
+      'disgusted': 1.4,  // Boost disgust detection
+      'neutral': 0.6     // Reduce neutral bias even more
     }
 
     // Find the dominant emotion with weighted confidence
@@ -512,15 +512,15 @@ async function analyzeEmotionWithFaceAPI(canvas: HTMLCanvasElement, modelsLoaded
       }
     })
 
-    // Additional logic for better emotion detection
+    // Lower thresholds for better emotion detection
     const emotionThresholds = {
-      'happy': 0.15,     // Lower threshold for happiness
-      'sad': 0.12,       // Lower threshold for sadness
-      'angry': 0.10,     // Lower threshold for anger
-      'fearful': 0.10,   // Lower threshold for fear
-      'surprised': 0.15, // Lower threshold for surprise
-      'disgusted': 0.12, // Lower threshold for disgust
-      'neutral': 0.20    // Higher threshold for neutral
+      'happy': 0.08,     // Even lower threshold for happiness
+      'sad': 0.08,       // Even lower threshold for sadness
+      'angry': 0.06,     // Even lower threshold for anger
+      'fearful': 0.06,   // Even lower threshold for fear
+      'surprised': 0.10, // Lower threshold for surprise
+      'disgusted': 0.08, // Lower threshold for disgust
+      'neutral': 0.30    // Much higher threshold for neutral to avoid false neutrals
     }
 
     // Check if any emotion meets the threshold
@@ -529,17 +529,26 @@ async function analyzeEmotionWithFaceAPI(canvas: HTMLCanvasElement, modelsLoaded
 
     Object.entries(expressions).forEach(([emotion, confidence]) => {
       const threshold = emotionThresholds[emotion as keyof typeof emotionThresholds] || 0.15
-      if (confidence > threshold && confidence > detectedConfidence) {
+      if (confidence > threshold && confidence > detectedConfidence && emotion !== 'neutral') {
         detectedEmotion = emotion
         detectedConfidence = confidence
       }
     })
 
-    // Use the detected emotion if it's above threshold, otherwise use dominant
-    const finalEmotion = detectedConfidence > 0.1 ? detectedEmotion : dominantEmotion
-    const finalConfidence = detectedConfidence > 0.1 ? detectedConfidence : maxConfidence
+    // If we detected a non-neutral emotion, use it. Otherwise use weighted analysis
+    let finalEmotion = dominantEmotion
+    let finalConfidence = maxConfidence
+    
+    if (detectedEmotion !== "neutral" && detectedConfidence > 0.05) {
+      finalEmotion = detectedEmotion
+      finalConfidence = detectedConfidence
+    } else if (dominantEmotion !== "neutral") {
+      // Use dominant from weighted analysis
+      finalEmotion = dominantEmotion
+      finalConfidence = Math.max(maxConfidence, 0.3) // Ensure at least 30% confidence for non-neutral
+    }
 
-    console.log("Final emotion detection:", { finalEmotion, finalConfidence, expressions })
+    console.log("Final emotion detection:", { finalEmotion, finalConfidence, detectedEmotion, detectedConfidence, dominantEmotion, expressions })
 
     // Map face-api.js emotions to our emotion system
     const emotionMap: {[key: string]: string} = {
