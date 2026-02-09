@@ -257,13 +257,40 @@ export function useAudioStream(options: AudioStreamOptions = {}) {
 
         utterance.onend = () => {
           setIsSpeaking(false)
-          optionsRef.current.onStatusChange?.(isListeningRef.current ? "listening" : "idle")
+          // Auto-restart listening after AI finishes speaking for real-time flow
+          if (isListeningRef.current) {
+            optionsRef.current.onStatusChange?.("listening")
+            // Restart recognition if it was stopped
+            if (recognitionRef.current && !isListeningRef.current) {
+              setTimeout(() => {
+                try {
+                  recognitionRef.current?.start()
+                } catch (e) {
+                  console.log("Recognition already started")
+                }
+              }, 500)
+            }
+          } else {
+            optionsRef.current.onStatusChange?.("idle")
+          }
           resolve()
         }
 
         utterance.onerror = (event) => {
           setIsSpeaking(false)
-          optionsRef.current.onStatusChange?.(isListeningRef.current ? "listening" : "idle")
+          // Auto-restart listening even on error
+          if (isListeningRef.current) {
+            optionsRef.current.onStatusChange?.("listening")
+            setTimeout(() => {
+              try {
+                recognitionRef.current?.start()
+              } catch (e) {
+                console.log("Recognition already started")
+              }
+            }, 500)
+          } else {
+            optionsRef.current.onStatusChange?.("idle")
+          }
           reject(new Error(`Speech synthesis error: ${event.error}`))
         }
 
