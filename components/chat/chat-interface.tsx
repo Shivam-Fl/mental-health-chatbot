@@ -360,19 +360,19 @@ export function ChatInterface({ user }: Readonly<ChatInterfaceProps>) {
 
           {/* Emotion Tracker */}
           {currentConversation && !showAnalytics && (
-            <div className="px-4 py-3 border-b border-border bg-card/50">
+            <div className="px-4 py-1 border-b border-border bg-card/50">
               <EmotionTracker conversationId={currentConversation.id} />
             </div>
           )}
 
           {/* Analytics toggle - simplified */}
           {currentConversation && !showAnalytics && (
-            <div className="px-4 py-2 border-b border-border bg-card/30 flex justify-end">
+            <div className="px-4 py-1 border-b border-border bg-card/30 flex justify-end">
               <Button 
                 variant="ghost" 
                 size="sm" 
                 onClick={() => setShowAnalytics(true)} 
-                className="text-xs"
+                className="text-xs h-7"
               >
                 <BarChart3 className="h-3 w-3 mr-2" />
                 View Analytics

@@ -114,28 +114,29 @@ export function EmotionTracker({ conversationId }: EmotionTrackerProps) {
   }
 
   return (
-    <Collapsible open={isOpen} onOpenChange={setIsOpen} className="mb-4">
-      <Card>
+    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+      <Card className="border-0 shadow-none">
         <CollapsibleTrigger asChild>
-          <CardHeader className="pb-3 cursor-pointer hover:bg-muted/50 transition-colors">
+          <CardHeader className="py-2 px-3 cursor-pointer hover:bg-muted/50 transition-colors">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <CardTitle className="text-sm">Emotion Tracking</CardTitle>
-                <CardDescription className="text-xs">Your recent emotional state</CardDescription>
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                <CardTitle className="text-xs font-medium">Emotion Tracking</CardTitle>
+                <span className="text-xs text-muted-foreground hidden sm:inline">•</span>
+                <CardDescription className="text-xs hidden sm:inline truncate">Your recent emotional state</CardDescription>
               </div>
-              <div className="flex items-center gap-2">
-                <Badge variant="outline" className={getTrendColor()}>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <Badge variant="outline" className={`${getTrendColor()} text-xs py-0 h-5`}>
                   {getTrendIcon()}
-                  <span className="ml-1 capitalize">{emotionTrend}</span>
+                  <span className="ml-1 capitalize text-xs">{emotionTrend}</span>
                 </Badge>
-                {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                {isOpen ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
               </div>
             </div>
           </CardHeader>
         </CollapsibleTrigger>
         <CollapsibleContent>
-          <CardContent className="pt-0">
-            <div className="flex flex-wrap gap-2 mb-3">
+          <CardContent className="px-3 py-2">
+            <div className="flex flex-wrap gap-2 mb-2">
               {recentEmotions.slice(0, 5).map((emotion, index) => (
                 <EmotionIndicator key={index} emotion={emotion.emotion_type} className="text-xs" />
               ))}

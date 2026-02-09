@@ -59,6 +59,9 @@ export function SessionAnalytics({ conversationId }: SessionAnalyticsProps) {
       }
       const data = await response.json()
       console.log("Analytics data received:", data)
+      console.log("Emotion trends count:", data.analytics?.emotionTrends?.length || 0)
+      console.log("Topic analysis count:", data.analytics?.topicAnalysis?.length || 0)
+      console.log("Total messages:", data.analytics?.totalMessages || 0)
       setAnalytics(data.analytics || null)
     } catch (error) {
       console.error("Failed to load analytics:", error)
@@ -172,26 +175,35 @@ export function SessionAnalytics({ conversationId }: SessionAnalyticsProps) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={analytics.emotionTrends}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="timestamp" tickFormatter={(value) => new Date(value).toLocaleTimeString()} />
-                <YAxis domain={[0, 1]} tickFormatter={(value) => `${(value * 100).toFixed(0)}%`} />
-                <Tooltip
-                  labelFormatter={(value) => new Date(value).toLocaleString()}
-                  formatter={(value: number | undefined, name) => [value !== undefined ? `${(value * 100).toFixed(1)}%` : 'N/A', "Confidence"]}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="confidence"
-                  stroke="var(--primary)"
-                  strokeWidth={2}
-                  dot={{ fill: "var(--primary)" }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
+          {analytics.emotionTrends && analytics.emotionTrends.length > 0 ? (
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={analytics.emotionTrends}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="timestamp" tickFormatter={(value) => new Date(value).toLocaleTimeString()} />
+                  <YAxis domain={[0, 1]} tickFormatter={(value) => `${(value * 100).toFixed(0)}%`} />
+                  <Tooltip
+                    labelFormatter={(value) => new Date(value).toLocaleString()}
+                    formatter={(value: number | undefined, name) => [value !== undefined ? `${(value * 100).toFixed(1)}%` : 'N/A', "Confidence"]}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="confidence"
+                    stroke="var(--primary)"
+                    strokeWidth={2}
+                    dot={{ fill: "var(--primary)" }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div className="h-64 flex items-center justify-center text-muted-foreground">
+              <div className="text-center">
+                <p className="mb-2">No emotion data available yet</p>
+                <p className="text-xs">Continue chatting to see your emotional journey</p>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -204,10 +216,11 @@ export function SessionAnalytics({ conversationId }: SessionAnalyticsProps) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {analytics.topicAnalysis.map((topic, index) => (
-              <div key={index} className="space-y-2">
-                <div className="flex items-center justify-between">
+          {analytics.topicAnalysis && analytics.topicAnalysis.length > 0 ? (
+            <div className="space-y-4">
+              {analytics.topicAnalysis.map((topic, index) => (
+                <div key={index} className="space-y-2">
+                  <div className="flex items-center justify-between">
                   <span className="text-sm font-medium">{topic.topic}</span>
                   <Badge variant={topic.sentiment > 0.5 ? "default" : "secondary"}>{topic.frequency} mentions</Badge>
                 </div>
@@ -219,6 +232,12 @@ export function SessionAnalytics({ conversationId }: SessionAnalyticsProps) {
               </div>
             ))}
           </div>
+          ) : (
+            <div className="py-8 text-center text-muted-foreground">
+              <p className="mb-2">No topics detected yet</p>
+              <p className="text-xs">Continue the conversation to analyze discussion themes</p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
