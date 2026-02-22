@@ -25,7 +25,9 @@ async function analyzeConversationWithAI(messages: any[]): Promise<AIAnalysisRes
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" })
 
     // Build a condensed conversation transcript (last 40 messages, 300 chars each)
+    // Exclude silent emotion_event rows — they have no content
     const transcript = messages
+      .filter((m: any) => m.message_type !== "emotion_event" && m.content)
       .slice(-40)
       .map((m: any) => `${m.role === "user" ? "User" : "Aura"}: ${String(m.content || "").substring(0, 300)}`)
       .join("\n")
@@ -142,8 +144,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       .map((m: any) => ({
         timestamp: m.created_at,
         emotion: m.emotion_detected as string,
-        confidence: 0.75, // stored confidence not in DB yet; use a neutral mid-value
-        source: (m.message_type as string) || "text",
+        confidence: 0.75,
+        source: m.message_type === "emotion_event"
+          ? "video"
+          : (m.message_type as string) || "text",
       }))
       .sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
 

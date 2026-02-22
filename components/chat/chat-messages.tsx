@@ -11,7 +11,7 @@ interface Message {
   id: string
   role: "user" | "assistant"
   content: string
-  message_type: "text" | "audio" | "video"
+  message_type: "text" | "audio" | "video" | "emotion_event"
   emotion_detected?: string
   created_at: string
 }
@@ -24,6 +24,9 @@ export function ChatMessages({ messages }: ChatMessagesProps) {
   const scrollAreaRef = useRef<HTMLDivElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
+  // Filter out silent emotion-event rows (used for realtime video analytics)
+  const visibleMessages = messages.filter((m) => m.message_type !== "emotion_event" && m.content)
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages])
@@ -35,7 +38,7 @@ export function ChatMessages({ messages }: ChatMessagesProps) {
     })
   }
 
-  if (messages.length === 0) {
+  if (visibleMessages.length === 0) {
     return (
       <div className="h-full flex items-center justify-center p-8">
         <div className="text-center max-w-md mx-auto">
@@ -59,7 +62,7 @@ export function ChatMessages({ messages }: ChatMessagesProps) {
   return (
     <ScrollArea className="h-full" ref={scrollAreaRef}>
       <div className="p-6 space-y-6 max-w-4xl mx-auto">
-        {messages.map((message) => (
+        {visibleMessages.map((message) => (
           <div
             key={message.id}
             className={cn("flex gap-4", message.role === "user" ? "ml-auto flex-row-reverse" : "mr-auto")}

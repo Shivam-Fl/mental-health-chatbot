@@ -73,7 +73,11 @@ export async function POST(req: Request) {
       .limit(5)
 
     // Use the canonical psychiatrist prompt for all audio modes
-    let conversationHistory = PSYCHIATRIST_SYSTEM_PROMPT + "\n\n"
+    let conversationHistory = PSYCHIATRIST_SYSTEM_PROMPT + `
+
+VOICE SESSION NOTE: This response will be spoken aloud via text-to-speech. Keep your reply natural and conversational — typically 1–3 sentences for everyday exchanges, up to 5–6 sentences when the depth is genuinely needed. Avoid lengthy monologues; this is a two-way spoken conversation.
+
+`
 
     // Add recent context
     if (recentMessages) {
