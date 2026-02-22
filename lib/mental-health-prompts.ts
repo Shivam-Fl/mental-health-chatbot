@@ -278,7 +278,7 @@ Respond now as Dr. Aura, following the conversational and formatting guidelines 
       contents: [{ role: "user", parts: [{ text: fullPrompt }] }],
       generationConfig: {
         temperature: 0.7,
-        maxOutputTokens: 350,  // cap responses — spoken aloud these should be concise
+        maxOutputTokens: 1024,  // generous ceiling — prompt controls conciseness
       },
     })
     const response = await result.response

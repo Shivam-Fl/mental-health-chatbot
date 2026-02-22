@@ -100,7 +100,7 @@ export async function POST(req: Request) {
         contents: [{ role: "user", parts: [{ text: conversationHistory }] }],
         generationConfig: {
           temperature: 0.8,
-          maxOutputTokens: 400,
+          maxOutputTokens: 1024,  // generous ceiling — VOICE_SESSION_NOTE controls conciseness
         },
       }),
       analyzeMessageEmotion(transcript),
