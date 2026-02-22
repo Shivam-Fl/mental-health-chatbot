@@ -285,13 +285,23 @@ export function useAudioStream(options: AudioStreamOptions = {}) {
           utterance.voice = preferredVoice
         }
 
+        // Chrome workaround: keep speechSynthesis alive for long utterances
+        const keepAlive = setInterval(() => {
+          if (synthRef.current?.speaking) {
+            synthRef.current.pause()
+            synthRef.current.resume()
+          }
+        }, 10000)
+
         utterance.onend = () => {
+          clearInterval(keepAlive)
           setIsSpeaking(false)
           optionsRef.current.onStatusChange?.("idle")
           resolve()
         }
 
         utterance.onerror = (event) => {
+          clearInterval(keepAlive)
           setIsSpeaking(false)
           optionsRef.current.onStatusChange?.("idle")
           reject(new Error(`Speech synthesis error: ${event.error}`))
