@@ -334,3 +334,74 @@ function detectEmotionInResponse(response: string): string {
   
   return "neutral"
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AI-powered single-message emotion + sentiment classifier
+// Used by text chat, audio, and video routes to replace keyword-based detection
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface MessageEmotionResult {
+  emotion: string
+  confidence: number
+  /** -1 (very negative) to +1 (very positive) */
+  sentiment: number
+}
+
+/**
+ * Classifies the emotional state of a single user message using Gemini.
+ * Returns `{ emotion, confidence, sentiment }`.
+ * Falls back to `{ emotion: "neutral", confidence: 0.5, sentiment: 0 }` on error.
+ */
+export async function analyzeMessageEmotion(message: string): Promise<MessageEmotionResult> {
+  try {
+    const { GoogleGenerativeAI } = await import("@google/generative-ai")
+    if (!process.env.GOOGLE_API_KEY) {
+      throw new Error("GOOGLE_API_KEY not set")
+    }
+    const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY)
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" })
+
+    const prompt = `Classify the emotional state expressed in this message. Be precise — do NOT default to neutral unless the message is genuinely informational with no emotional content.
+
+Message: "${message.replace(/"/g, "'").substring(0, 600)}"
+
+Reply with ONLY a valid JSON object, no markdown, no explanation:
+{"emotion":"<label>","confidence":<0.0-1.0>,"sentiment":<-1.0 to 1.0>}
+
+Valid emotion labels and when to use them:
+- "crisis": thoughts of suicide, self-harm, or not wanting to be alive
+- "anxiety": worry, nervousness, panic, feeling overwhelmed by uncertainty
+- "depression": sadness, hopelessness, emptiness, worthlessness, low energy
+- "stress": overwhelmed by tasks/responsibilities/workload
+- "anger": frustration, irritation, rage, feeling wronged
+- "joy": happiness, excitement, gratitude, relief, celebration
+- "fear": scared, terrified, dread
+- "surprise": shocked, astonished, caught off-guard
+- "disgust": repulsed, revolted, aversion
+- "neutral": factual or informational with no discernible emotional charge
+
+confidence: how certain you are (0.0 = guessing, 1.0 = very clear)
+sentiment: overall emotional valence (-1.0 = very negative, 0.0 = neutral, 1.0 = very positive)`
+
+    const result = await model.generateContent({
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      generationConfig: { temperature: 0.1, maxOutputTokens: 80 },
+    })
+
+    const text = result.response.text().trim()
+    // Extract the first JSON object from the response
+    const jsonMatch = text.match(/\{[^{}]+\}/)
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0])
+      return {
+        emotion: String(parsed.emotion || "neutral"),
+        confidence: Math.min(1, Math.max(0, parseFloat(parsed.confidence) || 0.5)),
+        sentiment: Math.min(1, Math.max(-1, parseFloat(parsed.sentiment) || 0)),
+      }
+    }
+    return { emotion: "neutral", confidence: 0.5, sentiment: 0 }
+  } catch (error) {
+    console.error("analyzeMessageEmotion error:", error)
+    return { emotion: "neutral", confidence: 0.5, sentiment: 0 }
+  }
+}

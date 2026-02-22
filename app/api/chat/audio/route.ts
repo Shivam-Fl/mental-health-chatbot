@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import { createClient } from "@/lib/supabase/server"
-import { PSYCHIATRIST_SYSTEM_PROMPT } from "@/lib/mental-health-prompts"
+import { PSYCHIATRIST_SYSTEM_PROMPT, analyzeMessageEmotion } from "@/lib/mental-health-prompts"
 
 export const maxDuration = 30
 
@@ -94,13 +94,17 @@ export async function POST(req: Request) {
     const genAI = getGoogleAI()
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" })
 
-    const result = await model.generateContentStream({
-      contents: [{ role: "user", parts: [{ text: conversationHistory }] }],
-      generationConfig: {
-        temperature: 0.8, // Slightly higher for more natural speech
-        maxOutputTokens: 800, // Enough for complete audio responses
-      },
-    })
+    // Run AI response generation and emotion detection in parallel
+    const [result, emotionResult] = await Promise.all([
+      model.generateContentStream({
+        contents: [{ role: "user", parts: [{ text: conversationHistory }] }],
+        generationConfig: {
+          temperature: 0.8,
+          maxOutputTokens: 800,
+        },
+      }),
+      analyzeMessageEmotion(transcript),
+    ])
 
     let fullResponse = ""
     for await (const chunk of result.stream) {
@@ -108,11 +112,9 @@ export async function POST(req: Request) {
       fullResponse += chunkText
     }
 
-    // Detect emotion from audio transcript
-    const detectedEmotion = detectEmotionFromAudio(transcript)
-    
-    // Use face emotion if available and confidence is higher, otherwise use audio emotion
-    const finalEmotion = (faceEmotion && faceEmotion.confidence > 0.5) ? faceEmotion.emotion : detectedEmotion
+    // Use face emotion if available and high-confidence, otherwise use AI text emotion
+    const aiTextEmotion = emotionResult.emotion
+    const finalEmotion = (faceEmotion && faceEmotion.confidence > 0.6) ? faceEmotion.emotion : aiTextEmotion
 
     // Save user message
     await supabase.from("messages").insert({
@@ -134,6 +136,7 @@ export async function POST(req: Request) {
     return Response.json({
       response: fullResponse,
       emotion_detected: finalEmotion,
+      sentiment: emotionResult.sentiment,
       face_emotion: faceEmotion,
       has_video: hasVideo,
       conversation_id: currentConversationId,
@@ -150,78 +153,4 @@ export async function POST(req: Request) {
       { status: 500 },
     )
   }
-}
-
-// Enhanced emotion detection for audio transcripts
-function detectEmotionFromAudio(transcript: string): string {
-  const text = transcript.toLowerCase()
-
-  // Audio-specific emotional indicators (including speech patterns)
-  const crisisIndicators = [
-    "i want to die",
-    "kill myself",
-    "end it all",
-    "no point",
-    "can't go on",
-    "suicide",
-    "hurt myself",
-  ]
-
-  const anxietyIndicators = [
-    "anxious",
-    "panic",
-    "worried",
-    "scared",
-    "nervous",
-    "overwhelmed",
-    "can't breathe",
-    "heart racing",
-    "shaking",
-  ]
-
-  const depressionIndicators = [
-    "depressed",
-    "sad",
-    "hopeless",
-    "empty",
-    "worthless",
-    "tired",
-    "exhausted",
-    "lonely",
-    "numb",
-    "dark",
-  ]
-
-  const angerIndicators = ["angry", "furious", "mad", "frustrated", "rage", "hate", "pissed", "irritated"]
-
-  const stressIndicators = ["stressed", "pressure", "overwhelmed", "too much", "can't handle", "breaking point"]
-
-  // Check for crisis first (highest priority)
-  if (crisisIndicators.some((indicator) => text.includes(indicator))) {
-    return "crisis"
-  }
-
-  if (anxietyIndicators.some((indicator) => text.includes(indicator))) {
-    return "anxiety"
-  }
-
-  if (depressionIndicators.some((indicator) => text.includes(indicator))) {
-    return "depression"
-  }
-
-  if (angerIndicators.some((indicator) => text.includes(indicator))) {
-    return "anger"
-  }
-
-  if (stressIndicators.some((indicator) => text.includes(indicator))) {
-    return "stress"
-  }
-
-  // Check for positive emotions
-  const joyIndicators = ["happy", "excited", "great", "wonderful", "amazing", "good", "better", "grateful"]
-  if (joyIndicators.some((indicator) => text.includes(indicator))) {
-    return "joy"
-  }
-
-  return "neutral"
 }

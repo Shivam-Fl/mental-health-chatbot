@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
-import { analyzeEmotion, PSYCHIATRIST_SYSTEM_PROMPT } from "@/lib/mental-health-prompts"
+import { analyzeEmotion, analyzeMessageEmotion, PSYCHIATRIST_SYSTEM_PROMPT } from "@/lib/mental-health-prompts"
 
 // Simple in-memory cache to prevent duplicate API calls
 const requestCache = new Map<string, { response: any; timestamp: number }>()
@@ -106,11 +106,26 @@ export async function POST(req: NextRequest) {
       conversationContext += "\n---\n"
     }
 
-    // Analyze emotion from both audio and video
+    // Determine the best emotion signal: face-api result wins if confidence >= 0.5,
+    // otherwise fall back to AI analysis of the transcript text.
     let detectedEmotion = "neutral"
     let emotionConfidence = 0.5
 
-    if (emotion && confidence) {
+    if (emotion && confidence && emotion !== "neutral" && confidence >= 0.5) {
+      // Face-api gave a confident non-neutral result — use it
+      detectedEmotion = emotion
+      emotionConfidence = confidence
+    } else if (transcript && transcript.trim()) {
+      // Face emotion is absent or weak — analyse the transcript with AI
+      const textEmotion = await analyzeMessageEmotion(transcript)
+      detectedEmotion = textEmotion.emotion
+      emotionConfidence = textEmotion.confidence
+      // If face emotion was non-neutral but just below threshold, blend it in
+      if (emotion && emotion !== "neutral" && confidence && confidence > 0.3) {
+        detectedEmotion = confidence > textEmotion.confidence ? emotion : textEmotion.emotion
+        emotionConfidence = Math.max(confidence, textEmotion.confidence)
+      }
+    } else if (emotion && confidence) {
       detectedEmotion = emotion
       emotionConfidence = confidence
     }
