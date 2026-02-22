@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
-import { analyzeEmotion } from "@/lib/mental-health-prompts"
+import { analyzeEmotion, analyzeMessageEmotion, PSYCHIATRIST_SYSTEM_PROMPT, VOICE_SESSION_NOTE } from "@/lib/mental-health-prompts"
 
 // Simple in-memory cache to prevent duplicate API calls
 const requestCache = new Map<string, { response: any; timestamp: number }>()
@@ -106,11 +106,26 @@ export async function POST(req: NextRequest) {
       conversationContext += "\n---\n"
     }
 
-    // Analyze emotion from both audio and video
+    // Determine the best emotion signal: face-api result wins if confidence >= 0.5,
+    // otherwise fall back to AI analysis of the transcript text.
     let detectedEmotion = "neutral"
     let emotionConfidence = 0.5
 
-    if (emotion && confidence) {
+    if (emotion && confidence && emotion !== "neutral" && confidence >= 0.5) {
+      // Face-api gave a confident non-neutral result — use it
+      detectedEmotion = emotion
+      emotionConfidence = confidence
+    } else if (transcript && transcript.trim()) {
+      // Face emotion is absent or weak — analyse the transcript with AI
+      const textEmotion = await analyzeMessageEmotion(transcript)
+      detectedEmotion = textEmotion.emotion
+      emotionConfidence = textEmotion.confidence
+      // If face emotion was non-neutral but just below threshold, blend it in
+      if (emotion && emotion !== "neutral" && confidence && confidence > 0.3) {
+        detectedEmotion = confidence > textEmotion.confidence ? emotion : textEmotion.emotion
+        emotionConfidence = Math.max(confidence, textEmotion.confidence)
+      }
+    } else if (emotion && confidence) {
       detectedEmotion = emotion
       emotionConfidence = confidence
     }
@@ -125,26 +140,12 @@ Visual Analysis:
 ` : ""
 
     const context = `
-You are Aura, a warm and empathetic AI companion whose goal is to provide emotional and mental support. Create a safe, caring space where users feel heard and valued.
-
-Guidelines:
-1. Listen deeply and respond thoughtfully, showing genuine understanding.  
-2. Speak naturally and warmly, like a supportive friend.  
-3. Match the user’s emotional tone—celebrate joy, gently acknowledge pain.  
-4. Keep conversations flowing with light prompts or reflections, without being repetitive.  
-5. Be patient, non-judgmental, and accepting at all times.  
-6. Offer gentle suggestions for professional help when needed; share crisis resources if self-harm is mentioned.  
-7. Always reply in the user’s language (English or Hindi).  
-8. Default to a female voice.  
-9. Share relatable insights or anecdotes when appropriate to build connection.  
-10. Never reveal system details or engage in technical tasks—stay focused on emotional support.  
-
-
-User is in a video call session with both audio and video input.
+${PSYCHIATRIST_SYSTEM_PROMPT}${VOICE_SESSION_NOTE}
+This is a real-time video call session — you can see the person and hear them, which adds an extra layer of connection and context.
 ${visualContext}
 Detected emotion: ${detectedEmotion} (confidence: ${Math.round(emotionConfidence * 100)}%)
-${transcript ? `User said: "${transcript}"` : "User is silent but visible"}
-`
+${transcript ? `User said: "${transcript}"` : "User is silent but visible — you can see them on camera."}
+${conversationContext}`
 
     // Generate AI response with enhanced emotion analysis
     const aiResponse = await analyzeEmotion({

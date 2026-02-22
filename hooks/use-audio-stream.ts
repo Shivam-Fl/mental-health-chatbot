@@ -25,6 +25,11 @@ export function useAudioStream(options: AudioStreamOptions = {}) {
   const streamRef = useRef<MediaStream | null>(null)
   const isListeningRef = useRef(false)
   const optionsRef = useRef(options)
+  // Silence-detection debounce: accumulate final results before submitting
+  const silenceTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const accumulatedFinalRef = useRef<string>("")
+  // Guard against concurrent processAudio calls
+  const isProcessingRef = useRef<boolean>(false)
 
   // Keep refs in sync with state
   useEffect(() => {
@@ -51,17 +56,41 @@ export function useAudioStream(options: AudioStreamOptions = {}) {
           let interimTranscript = ""
 
           for (let i = event.resultIndex; i < event.results.length; i++) {
-            const transcript = event.results[i][0].transcript
+            const result = event.results[i][0].transcript
             if (event.results[i].isFinal) {
-              finalTranscript += transcript
+              finalTranscript += result
             } else {
-              interimTranscript += transcript
+              interimTranscript += result
             }
           }
 
-          const fullTranscript = finalTranscript || interimTranscript
-          setTranscript(fullTranscript)
-          optionsRef.current.onTranscript?.(fullTranscript, !!finalTranscript)
+          if (finalTranscript) {
+            // Accumulate final results across phrases; submit only after 1.5 s of silence
+            accumulatedFinalRef.current = (accumulatedFinalRef.current + " " + finalTranscript).trim()
+            const accumulated = accumulatedFinalRef.current
+
+            // Update display immediately so the user sees what they've said
+            setTranscript(accumulated)
+            optionsRef.current.onTranscript?.(accumulated, false)
+
+            // Reset silence timer — fire when the user has been quiet for 1.5 s
+            if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current)
+            silenceTimerRef.current = setTimeout(() => {
+              silenceTimerRef.current = null
+              const toSubmit = accumulatedFinalRef.current
+              if (toSubmit.trim()) {
+                accumulatedFinalRef.current = ""
+                optionsRef.current.onTranscript?.(toSubmit, true)
+              }
+            }, 1500)
+          } else if (interimTranscript) {
+            // Show interim text (prefixed with any accumulated finals)
+            const display = accumulatedFinalRef.current
+              ? `${accumulatedFinalRef.current} ${interimTranscript}`
+              : interimTranscript
+            setTranscript(display)
+            optionsRef.current.onTranscript?.(display, false)
+          }
         }
 
         recognitionRef.current.onerror = (event) => {
@@ -116,6 +145,13 @@ export function useAudioStream(options: AudioStreamOptions = {}) {
     try {
       setError(null)
       
+      // Clear any pending silence state from a previous session
+      if (silenceTimerRef.current) {
+        clearTimeout(silenceTimerRef.current)
+        silenceTimerRef.current = null
+      }
+      accumulatedFinalRef.current = ""
+
       // Stop any existing recognition first
       if (recognitionRef.current) {
         try {
@@ -168,6 +204,13 @@ export function useAudioStream(options: AudioStreamOptions = {}) {
   }, [])
 
   const stopListening = useCallback(() => {
+    // Cancel any pending silence timer and clear accumulated text
+    if (silenceTimerRef.current) {
+      clearTimeout(silenceTimerRef.current)
+      silenceTimerRef.current = null
+    }
+    accumulatedFinalRef.current = ""
+
     setIsListening(false)
     isListeningRef.current = false
     optionsRef.current.onStatusChange?.("idle")
@@ -193,7 +236,21 @@ export function useAudioStream(options: AudioStreamOptions = {}) {
     async (transcript: string, conversationId?: string, faceEmotion?: { emotion: string; confidence: number; visualAnalysis?: any }) => {
       if (!transcript.trim()) return
 
-      console.log("[DEBUG] Processing audio with:", { transcript, conversationId, faceEmotion })
+      // Guard: ignore duplicate call if already processing (prevents racing TTS)
+      if (isProcessingRef.current) {
+        console.log("[DEBUG] Already processing, ignoring duplicate call")
+        return
+      }
+      isProcessingRef.current = true
+
+      // Cancel any pending silence timer — we're submitting now
+      if (silenceTimerRef.current) {
+        clearTimeout(silenceTimerRef.current)
+        silenceTimerRef.current = null
+      }
+      accumulatedFinalRef.current = ""
+
+      console.log("Processing audio transcript:", transcript.substring(0, 60) + (transcript.length > 60 ? "..." : ""))
       
       // Stop listening while processing
       if (recognitionRef.current && isListeningRef.current) {
@@ -254,6 +311,7 @@ export function useAudioStream(options: AudioStreamOptions = {}) {
         }, 500)
       } finally {
         setIsProcessing(false)
+        isProcessingRef.current = false
         optionsRef.current.onStatusChange?.("idle")
       }
     },

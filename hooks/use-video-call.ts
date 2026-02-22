@@ -37,11 +37,22 @@ export function useVideoCall(options: VideoCallOptions = {}) {
   const speechTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const lastTranscriptTimeRef = useRef<number>(0)
   const optionsRef = useRef(options)
+  const isVideoEnabledRef = useRef(isVideoEnabled)
+  // Silence-detection debounce (same approach as audio stream)
+  const silenceTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const accumulatedFinalRef = useRef<string>("")
+  // Ref so onend can check whether to auto-restart without stale closure
+  const isListeningRef = useRef(false)
 
   // Keep options ref in sync
   useEffect(() => {
     optionsRef.current = options
   }, [options])
+
+  // Keep isVideoEnabledRef in sync
+  useEffect(() => {
+    isVideoEnabledRef.current = isVideoEnabled
+  }, [isVideoEnabled])
 
   // Initialize speech recognition (like audio mode - on demand)
   useEffect(() => {
@@ -50,38 +61,60 @@ export function useVideoCall(options: VideoCallOptions = {}) {
       recognitionRef.current = new SpeechRecognition()
 
       if (recognitionRef.current) {
-        recognitionRef.current.continuous = false // Changed to false for on-demand
+        recognitionRef.current.continuous = true  // Keep listening through natural pauses
         recognitionRef.current.interimResults = true
         recognitionRef.current.lang = "en-US"
         recognitionRef.current.maxAlternatives = 1
 
         recognitionRef.current.onresult = (event) => {
-          console.log("Speech recognition result:", event)
           let finalTranscript = ""
           let interimTranscript = ""
 
           for (let i = event.resultIndex; i < event.results.length; i++) {
-            const transcript = event.results[i][0].transcript
+            const result = event.results[i][0].transcript
             if (event.results[i].isFinal) {
-              finalTranscript += transcript
+              finalTranscript += result
             } else {
-              interimTranscript += transcript
+              interimTranscript += result
             }
           }
 
-          const fullTranscript = finalTranscript || interimTranscript
-          const isFinal = !!finalTranscript
-          console.log("Transcript:", fullTranscript, "isFinal:", isFinal)
-          
-          // Only process if we have meaningful content
-          if (fullTranscript.trim().length > 0) {
-            optionsRef.current.onTranscript?.(fullTranscript, isFinal)
+          if (finalTranscript) {
+            // Accumulate final results; submit only after 1.5 s of silence
+            accumulatedFinalRef.current = (accumulatedFinalRef.current + " " + finalTranscript).trim()
+            const accumulated = accumulatedFinalRef.current
+
+            // Show accumulated text in UI immediately
+            if (accumulated.trim().length > 0) {
+              optionsRef.current.onTranscript?.(accumulated, false)
+            }
+
+            // Reset silence timer
+            if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current)
+            silenceTimerRef.current = setTimeout(() => {
+              silenceTimerRef.current = null
+              const toSubmit = accumulatedFinalRef.current
+              if (toSubmit.trim()) {
+                accumulatedFinalRef.current = ""
+                // Submit as final — stop recognition so TTS won't be picked up
+                optionsRef.current.onTranscript?.(toSubmit, true)
+                try { recognitionRef.current?.stop() } catch (e) { console.warn("Error stopping recognition after silence:", e) }
+              }
+            }, 1500)
+          } else if (interimTranscript) {
+            const display = accumulatedFinalRef.current
+              ? `${accumulatedFinalRef.current} ${interimTranscript}`
+              : interimTranscript
+            if (display.trim().length > 0) {
+              optionsRef.current.onTranscript?.(display, false)
+            }
           }
         }
 
         recognitionRef.current.onstart = () => {
           console.log("Speech recognition started")
           setIsListening(true)
+          isListeningRef.current = true
         }
 
         recognitionRef.current.onerror = (event) => {
@@ -96,10 +129,12 @@ export function useVideoCall(options: VideoCallOptions = {}) {
             console.log("No speech detected - this is normal")
             // Don't set error for no-speech - it's expected
             setIsListening(false)
+            isListeningRef.current = false
             setIsManualListening(false)
           } else if (event.error === "aborted") {
             console.log("Speech recognition aborted")
             setIsListening(false)
+            isListeningRef.current = false
             setIsManualListening(false)
           }
         }
@@ -107,6 +142,7 @@ export function useVideoCall(options: VideoCallOptions = {}) {
         recognitionRef.current.onend = () => {
           console.log("Speech recognition ended")
           setIsListening(false)
+          isListeningRef.current = false
           setIsManualListening(false)
         }
       }
@@ -120,12 +156,12 @@ export function useVideoCall(options: VideoCallOptions = {}) {
     }
   }, [])
 
-  // Load face-api.js models
+  // Load face-api.js models from local /models directory
   useEffect(() => {
     const loadModels = async () => {
       try {
-        console.log("Loading face-api.js models...")
-        const MODEL_URL = 'https://justadudewhohacks.github.io/face-api.js/models'
+        console.log("Loading face-api.js models from local /models...")
+        const MODEL_URL = '/models'
         await Promise.all([
           faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
           faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL),
@@ -134,7 +170,20 @@ export function useVideoCall(options: VideoCallOptions = {}) {
         console.log("Face-api.js models loaded successfully")
       } catch (error) {
         console.error("Failed to load face-api.js models:", error)
-        modelsLoadedRef.current = false
+        // Fallback to external URL if local fails
+        try {
+          console.log("Trying external model URL as fallback...")
+          const FALLBACK_URL = 'https://justadudewhohacks.github.io/face-api.js/models'
+          await Promise.all([
+            faceapi.nets.tinyFaceDetector.loadFromUri(FALLBACK_URL),
+            faceapi.nets.faceExpressionNet.loadFromUri(FALLBACK_URL),
+          ])
+          modelsLoadedRef.current = true
+          console.log("Face-api.js models loaded from fallback URL")
+        } catch (fallbackError) {
+          console.error("Failed to load face-api.js models from fallback URL:", fallbackError)
+          modelsLoadedRef.current = false
+        }
       }
     }
 
@@ -236,11 +285,17 @@ export function useVideoCall(options: VideoCallOptions = {}) {
       recognitionRef.current.stop()
     }
 
-    // Clear speech timeout
+    // Clear speech timeout and silence timer
     if (speechTimeoutRef.current) {
       clearTimeout(speechTimeoutRef.current)
       speechTimeoutRef.current = null
     }
+    if (silenceTimerRef.current) {
+      clearTimeout(silenceTimerRef.current)
+      silenceTimerRef.current = null
+    }
+    accumulatedFinalRef.current = ""
+    isListeningRef.current = false
 
     // Stop video stream
     if (streamRef.current) {
@@ -301,22 +356,38 @@ export function useVideoCall(options: VideoCallOptions = {}) {
   }, [isVideoEnabled, isStreaming])
 
   const startListening = useCallback(async () => {
-    if (!isAudioEnabled || !recognitionRef.current || isListening) return
+    if (!isAudioEnabled || !recognitionRef.current || isListeningRef.current) return
+
+    // Clear any previous silence state
+    if (silenceTimerRef.current) {
+      clearTimeout(silenceTimerRef.current)
+      silenceTimerRef.current = null
+    }
+    accumulatedFinalRef.current = ""
 
     try {
-      console.log("Starting manual speech recognition...")
+      console.log("Starting speech recognition...")
       setIsManualListening(true)
+      isListeningRef.current = true
       setError(null)
       recognitionRef.current.start()
     } catch (e) {
       console.error("Failed to start speech recognition:", e)
       setError("Failed to start speech recognition. Please try again.")
       setIsManualListening(false)
+      isListeningRef.current = false
     }
-  }, [isAudioEnabled, isListening])
+  }, [isAudioEnabled])
 
   const stopListening = useCallback(() => {
-    if (recognitionRef.current && isListening) {
+    // Cancel pending silence timer
+    if (silenceTimerRef.current) {
+      clearTimeout(silenceTimerRef.current)
+      silenceTimerRef.current = null
+    }
+    accumulatedFinalRef.current = ""
+
+    if (recognitionRef.current && isListeningRef.current) {
       try {
         recognitionRef.current.stop()
         console.log("Stopped speech recognition")
@@ -325,7 +396,8 @@ export function useVideoCall(options: VideoCallOptions = {}) {
       }
     }
     setIsManualListening(false)
-  }, [isListening])
+    isListeningRef.current = false
+  }, [])
 
   const toggleAudio = useCallback(() => {
     const newAudioState = !isAudioEnabled
@@ -347,7 +419,7 @@ export function useVideoCall(options: VideoCallOptions = {}) {
   }, [isAudioEnabled, isStreaming, isListening, stopListening])
 
   const captureAndAnalyzeFrame = useCallback(async () => {
-    if (!videoRef.current || !canvasRef.current || !isStreamingRef.current || !isVideoEnabled) {
+    if (!videoRef.current || !canvasRef.current || !isStreamingRef.current || !isVideoEnabledRef.current) {
       return
     }
 
@@ -389,7 +461,7 @@ export function useVideoCall(options: VideoCallOptions = {}) {
     } catch (error) {
       console.error("Error analyzing frame:", error)
     }
-  }, [isVideoEnabled])
+  }, [])
 
   return {
     isStreaming,
