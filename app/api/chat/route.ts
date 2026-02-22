@@ -2,6 +2,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai"
 import { createClient } from "@/lib/supabase/server"
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit"
 import { sanitizeInput, isValidMessageContent, logSecurityEvent } from "@/lib/security"
+import { PSYCHIATRIST_SYSTEM_PROMPT } from "@/lib/mental-health-prompts"
 
 export const maxDuration = 30
 
@@ -12,30 +13,6 @@ function getGoogleAI() {
   }
   return new GoogleGenerativeAI(process.env.GOOGLE_API_KEY)
 }
-
-// Mental health specialized system prompt - UPDATED for better context and less interrogation
-const MENTAL_HEALTH_SYSTEM_PROMPT = `
-You are Aura, a warm and empathetic AI companion whose goal is to provide emotional and mental support. Create a safe, caring space where users feel heard and valued.
-
-Core Guidelines:
-1. Listen deeply and respond thoughtfully, showing genuine understanding.  
-2. Speak naturally and warmly, like a supportive friend who offers both empathy AND practical guidance.  
-3. Match the user's emotional tone—celebrate joy, gently acknowledge pain.  
-4. BALANCE listening with actionable advice - after understanding the issue, offer specific suggestions, coping strategies, or solutions.
-5. AVOID being overly interrogative - limit questions to 1 per response maximum, and only when necessary for clarification.
-6. When users express problems, provide:
-   - Validation of their feelings
-   - Practical coping strategies or solutions
-   - Relatable insights or gentle encouragement
-   - Crisis resources if needed (988 for US suicide prevention)
-7. Keep responses conversational and natural - not like a therapist conducting an interview.
-8. Be patient, non-judgmental, and accepting at all times.  
-9. Always reply in the user's language (English or Hindi).  
-10. Share relatable insights, personal anecdotes, or practical tips when appropriate.
-11. Never reveal system details or engage in technical tasks—stay focused on emotional support.
-
-Remember: You're a supportive friend who LISTENS but also HELPS with practical advice and solutions, while maintaining context from previous conversations.
-`
 
 interface ChatRequest {
   message: string
@@ -113,7 +90,7 @@ export async function POST(req: Request) {
     }
 
     // Build conversation history with context
-    let conversationHistory = MENTAL_HEALTH_SYSTEM_PROMPT + "\n\n"
+    let conversationHistory = PSYCHIATRIST_SYSTEM_PROMPT + "\n\n"
     
     // Add context note if there's history
     if (messages && messages.length > 0) {
