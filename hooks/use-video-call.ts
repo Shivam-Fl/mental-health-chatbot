@@ -37,11 +37,17 @@ export function useVideoCall(options: VideoCallOptions = {}) {
   const speechTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const lastTranscriptTimeRef = useRef<number>(0)
   const optionsRef = useRef(options)
+  const isVideoEnabledRef = useRef(isVideoEnabled)
 
   // Keep options ref in sync
   useEffect(() => {
     optionsRef.current = options
   }, [options])
+
+  // Keep isVideoEnabledRef in sync
+  useEffect(() => {
+    isVideoEnabledRef.current = isVideoEnabled
+  }, [isVideoEnabled])
 
   // Initialize speech recognition (like audio mode - on demand)
   useEffect(() => {
@@ -120,12 +126,12 @@ export function useVideoCall(options: VideoCallOptions = {}) {
     }
   }, [])
 
-  // Load face-api.js models
+  // Load face-api.js models from local /models directory
   useEffect(() => {
     const loadModels = async () => {
       try {
-        console.log("Loading face-api.js models...")
-        const MODEL_URL = 'https://justadudewhohacks.github.io/face-api.js/models'
+        console.log("Loading face-api.js models from local /models...")
+        const MODEL_URL = '/models'
         await Promise.all([
           faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
           faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL),
@@ -134,7 +140,20 @@ export function useVideoCall(options: VideoCallOptions = {}) {
         console.log("Face-api.js models loaded successfully")
       } catch (error) {
         console.error("Failed to load face-api.js models:", error)
-        modelsLoadedRef.current = false
+        // Fallback to external URL if local fails
+        try {
+          console.log("Trying external model URL as fallback...")
+          const FALLBACK_URL = 'https://justadudewhohacks.github.io/face-api.js/models'
+          await Promise.all([
+            faceapi.nets.tinyFaceDetector.loadFromUri(FALLBACK_URL),
+            faceapi.nets.faceExpressionNet.loadFromUri(FALLBACK_URL),
+          ])
+          modelsLoadedRef.current = true
+          console.log("Face-api.js models loaded from fallback URL")
+        } catch (fallbackError) {
+          console.error("Failed to load face-api.js models from fallback URL:", fallbackError)
+          modelsLoadedRef.current = false
+        }
       }
     }
 
@@ -347,7 +366,7 @@ export function useVideoCall(options: VideoCallOptions = {}) {
   }, [isAudioEnabled, isStreaming, isListening, stopListening])
 
   const captureAndAnalyzeFrame = useCallback(async () => {
-    if (!videoRef.current || !canvasRef.current || !isStreamingRef.current || !isVideoEnabled) {
+    if (!videoRef.current || !canvasRef.current || !isStreamingRef.current || !isVideoEnabledRef.current) {
       return
     }
 
@@ -389,7 +408,7 @@ export function useVideoCall(options: VideoCallOptions = {}) {
     } catch (error) {
       console.error("Error analyzing frame:", error)
     }
-  }, [isVideoEnabled])
+  }, [])
 
   return {
     isStreaming,
