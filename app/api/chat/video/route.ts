@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
-import { analyzeEmotion, analyzeMessageEmotion, PSYCHIATRIST_SYSTEM_PROMPT } from "@/lib/mental-health-prompts"
+import { analyzeEmotion, analyzeMessageEmotion, PSYCHIATRIST_SYSTEM_PROMPT, VOICE_SESSION_NOTE } from "@/lib/mental-health-prompts"
 
 // Simple in-memory cache to prevent duplicate API calls
 const requestCache = new Map<string, { response: any; timestamp: number }>()
@@ -140,10 +140,7 @@ Visual Analysis:
 ` : ""
 
     const context = `
-${PSYCHIATRIST_SYSTEM_PROMPT}
-
-VOICE SESSION NOTE: This response will be spoken aloud via text-to-speech. Keep your reply natural and conversational — typically 1–3 sentences for everyday exchanges, up to 5–6 sentences when depth is genuinely needed. Avoid long monologues; this is a two-way spoken conversation.
-
+${PSYCHIATRIST_SYSTEM_PROMPT}${VOICE_SESSION_NOTE}
 This is a real-time video call session — you can see the person and hear them, which adds an extra layer of connection and context.
 ${visualContext}
 Detected emotion: ${detectedEmotion} (confidence: ${Math.round(emotionConfidence * 100)}%)

@@ -44,6 +44,16 @@ Keep responses focused: 3 to 5 sentences for simple emotional moments, up to 8 s
 Match the length and tone to the moment — do not lecture, but do not be too brief when depth is genuinely needed.
 Always reply in the user's language (English or Hindi).`
 
+/**
+ * Appended after PSYCHIATRIST_SYSTEM_PROMPT for audio/video voice sessions.
+ * Explicitly overrides the base "3-5 sentences" rule for spoken responses.
+ */
+export const VOICE_SESSION_NOTE = `
+
+VOICE SESSION - STRICT LENGTH RULE (overrides the general format guidance above): This response is spoken aloud via text-to-speech. Default to 1-2 sentences. Only go to 3 sentences if the person is in genuine distress or needs a concrete technique explained step-by-step. NEVER produce more than 3 sentences for a voice reply. Do not lecture. Do not summarise. Just respond like a warm human on a phone call.
+
+`
+
 export const CRISIS_RESOURCES = {
   us: {
     suicide: "988 Suicide & Crisis Lifeline",
@@ -264,7 +274,13 @@ User message: "${message}"
 Respond now as Dr. Aura, following the conversational and formatting guidelines already given. Apply the emotion-specific approach above to this moment.${isVideoCall ? " This is a video session — you can see the person, so acknowledge the visual dimension naturally when relevant." : ""}`
 
   try {
-    const result = await model.generateContent(fullPrompt)
+    const result = await model.generateContent({
+      contents: [{ role: "user", parts: [{ text: fullPrompt }] }],
+      generationConfig: {
+        temperature: 0.7,
+        maxOutputTokens: 350,  // cap responses — spoken aloud these should be concise
+      },
+    })
     const response = await result.response
     const content = response.text()
 

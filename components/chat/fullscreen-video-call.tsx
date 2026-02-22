@@ -46,6 +46,23 @@ export function FullscreenVideoCall({ conversationId, onClose }: FullscreenVideo
   // Concurrent processing guard (ref so it's never stale)
   const isProcessingRef = useRef(false)
 
+  // Flush accumulated realtime emotions to the analytics store
+  // Defined BEFORE useVideoCall so onEmotionDetected can reference it safely
+  const flushEmotionBuffer = useCallback(async () => {
+    if (!conversationId || emotionBufferRef.current.length === 0) return
+    const batch = [...emotionBufferRef.current]
+    emotionBufferRef.current = []
+    try {
+      await fetch(`/api/conversations/${conversationId}/emotion-events`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ events: batch }),
+      })
+    } catch (e) {
+      console.error("Failed to flush emotion buffer:", e)
+    }
+  }, [conversationId])
+
   const { 
     isStreaming, 
     currentEmotion, 
@@ -75,6 +92,10 @@ export function FullscreenVideoCall({ conversationId, onClose }: FullscreenVideo
     onEmotionDetected: (emotion, confidence) => {
       if (emotion && emotion !== "neutral") {
         emotionBufferRef.current.push({ emotion, confidence, timestamp: new Date().toISOString() })
+        // Flush eagerly when we have accumulated a few events
+        if (emotionBufferRef.current.length >= 3) {
+          flushEmotionBuffer()
+        }
       }
     },
     onVisualAnalysis: (analysis) => {
@@ -144,6 +165,8 @@ export function FullscreenVideoCall({ conversationId, onClose }: FullscreenVideo
     }
   }, [])
 
+
+
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60)
     const secs = seconds % 60
@@ -186,6 +209,7 @@ export function FullscreenVideoCall({ conversationId, onClose }: FullscreenVideo
     if (safetyTimeoutRef.current) clearTimeout(safetyTimeoutRef.current)
     safetyTimeoutRef.current = setTimeout(() => {
       console.warn("Safety timeout: resetting stuck state")
+      isSpeakingRef.current = false
       setIsSpeaking(false)
       setIsProcessingRequest(false)
       window.speechSynthesis?.cancel()
@@ -195,6 +219,7 @@ export function FullscreenVideoCall({ conversationId, onClose }: FullscreenVideo
     try {
       setIsProcessingRequest(true)
       lastRequestTimeRef.current = now
+      isSpeakingRef.current = true  // set synchronously — ref must lead state
       setIsSpeaking(true)
 
       const response = await fetch("/api/chat/video", {
@@ -236,6 +261,7 @@ export function FullscreenVideoCall({ conversationId, onClose }: FullscreenVideo
                 clearInterval(keepAliveRef.current)
                 keepAliveRef.current = null
               }
+              isSpeakingRef.current = false  // must update before safeRestartListening checks it
               setIsSpeaking(false)
               safeRestartListening()
             }
@@ -244,6 +270,7 @@ export function FullscreenVideoCall({ conversationId, onClose }: FullscreenVideo
                 clearInterval(keepAliveRef.current)
                 keepAliveRef.current = null
               }
+              isSpeakingRef.current = false
               setIsSpeaking(false)
               safeRestartListening()
             }
@@ -253,19 +280,23 @@ export function FullscreenVideoCall({ conversationId, onClose }: FullscreenVideo
             }, 100)
           } catch (e) {
             console.error("TTS error:", e)
+            isSpeakingRef.current = false
             setIsSpeaking(false)
             safeRestartListening()
           }
         } else {
+          isSpeakingRef.current = false
           setIsSpeaking(false)
           safeRestartListening()
         }
       } else {
+        isSpeakingRef.current = false
         setIsSpeaking(false)
         safeRestartListening()
       }
     } catch (error) {
       console.error("Error processing video interaction:", error)
+      isSpeakingRef.current = false
       setIsSpeaking(false)
       safeRestartListening()
     } finally {
@@ -274,28 +305,7 @@ export function FullscreenVideoCall({ conversationId, onClose }: FullscreenVideo
     }
   }, [conversationId, lastVisualAnalysis, isProcessingRequest, startListening, safeRestartListening])
 
-  // Flush accumulated realtime emotions to the analytics store
-  const flushEmotionBuffer = useCallback(async () => {
-    if (!conversationId || emotionBufferRef.current.length === 0) return
-    const batch = [...emotionBufferRef.current]
-    emotionBufferRef.current = []
-    try {
-      await fetch(`/api/conversations/${conversationId}/emotion-events`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ events: batch }),
-      })
-    } catch (e) {
-      console.error("Failed to flush emotion buffer:", e)
-    }
-  }, [conversationId])
 
-  // Flush realtime emotions every 30 s while the call is active
-  useEffect(() => {
-    if (!isStreaming || !conversationId) return
-    const interval = setInterval(flushEmotionBuffer, 30000)
-    return () => clearInterval(interval)
-  }, [isStreaming, conversationId, flushEmotionBuffer])
 
   const handleEndCall = () => {
     if (isStreaming) {

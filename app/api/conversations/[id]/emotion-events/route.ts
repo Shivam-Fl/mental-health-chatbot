@@ -65,13 +65,16 @@ export async function POST(
       return NextResponse.json({ ok: true, saved: 0 })
     }
 
-    // Insert as special rows (role "assistant", message_type "emotion_event")
-    // Chat display filters these out; analytics includes them tagged as "video" source.
+    // Insert as lightweight rows that the analytics route can read.
+    // We use message_type 'video' (within the existing DB CHECK constraint) and a
+    // distinctive content marker so chat-display can filter them out without any
+    // schema migration.  The content marker is stripped in the analytics AI transcript
+    // filter and in the chat-messages visibility filter.
     const rows = deduped.map((ev) => ({
       conversation_id: conversationId,
       role: "assistant",
-      content: "",
-      message_type: "emotion_event",
+      content: "__emotion_event__",
+      message_type: "video",
       emotion_detected: ev.emotion,
       created_at: ev.timestamp,
     }))

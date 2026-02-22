@@ -25,9 +25,9 @@ async function analyzeConversationWithAI(messages: any[]): Promise<AIAnalysisRes
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" })
 
     // Build a condensed conversation transcript (last 40 messages, 300 chars each)
-    // Exclude silent emotion_event rows — they have no content
+    // messages is already filtered to exclude emotion_event rows (handled by the caller)
     const transcript = messages
-      .filter((m: any) => m.message_type !== "emotion_event" && m.content)
+      .filter((m: any) => m.content && m.content.trim())
       .slice(-40)
       .map((m: any) => `${m.role === "user" ? "User" : "Aura"}: ${String(m.content || "").substring(0, 300)}`)
       .join("\n")
@@ -107,7 +107,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     if (convError) throw convError
 
-    const messages: any[] = conversation.messages || []
+    const allMessages: any[] = conversation.messages || []
+    // Separate realtime emotion-event rows from real conversation messages
+    const isEmotionEventRow = (m: any) => m.content === "__emotion_event__"
+    const messages = allMessages.filter((m) => !isEmotionEventRow(m))
+    const emotionEventRows = allMessages.filter(isEmotionEventRow)
 
     // ── Basic metrics ──────────────────────────────────────────────────────
 
@@ -136,25 +140,27 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       { text: 0, audio: 0, video: 0 }
     )
 
-    // ── Emotion trends — include ALL messages with an emotion ─────────────
-    // Sort chronologically and include message_type so the UI can distinguish sources.
+    // ── Emotion trends — include real messages + realtime video emotion rows ──
+    // Realtime video emotion rows are identified by content === "__emotion_event__"
 
-    const emotionTrends = messages
+    const combinedMessages = [...messages, ...emotionEventRows]
+
+    const emotionTrends = combinedMessages
       .filter((m: any) => m.emotion_detected && m.emotion_detected !== "neutral")
       .map((m: any) => ({
         timestamp: m.created_at,
         emotion: m.emotion_detected as string,
         confidence: 0.75,
-        source: m.message_type === "emotion_event"
+        source: isEmotionEventRow(m)
           ? "video"
           : (m.message_type as string) || "text",
       }))
       .sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
 
-    // ── Emotion distribution counts ───────────────────────────────────────
+    // ── Emotion distribution counts — include realtime video events ───────
 
     const emotionDistribution: Record<string, number> = {}
-    messages.forEach((m: any) => {
+    combinedMessages.forEach((m: any) => {
       const e = m.emotion_detected
       if (e) emotionDistribution[e] = (emotionDistribution[e] || 0) + 1
     })

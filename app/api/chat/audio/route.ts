@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import { createClient } from "@/lib/supabase/server"
-import { PSYCHIATRIST_SYSTEM_PROMPT, analyzeMessageEmotion } from "@/lib/mental-health-prompts"
+import { PSYCHIATRIST_SYSTEM_PROMPT, VOICE_SESSION_NOTE, analyzeMessageEmotion } from "@/lib/mental-health-prompts"
 
 export const maxDuration = 30
 
@@ -73,11 +73,7 @@ export async function POST(req: Request) {
       .limit(5)
 
     // Use the canonical psychiatrist prompt for all audio modes
-    let conversationHistory = PSYCHIATRIST_SYSTEM_PROMPT + `
-
-VOICE SESSION NOTE: This response will be spoken aloud via text-to-speech. Keep your reply natural and conversational — typically 1–3 sentences for everyday exchanges, up to 5–6 sentences when the depth is genuinely needed. Avoid lengthy monologues; this is a two-way spoken conversation.
-
-`
+    let conversationHistory = PSYCHIATRIST_SYSTEM_PROMPT + VOICE_SESSION_NOTE
 
     // Add recent context
     if (recentMessages) {
@@ -104,7 +100,7 @@ VOICE SESSION NOTE: This response will be spoken aloud via text-to-speech. Keep 
         contents: [{ role: "user", parts: [{ text: conversationHistory }] }],
         generationConfig: {
           temperature: 0.8,
-          maxOutputTokens: 800,
+          maxOutputTokens: 400,
         },
       }),
       analyzeMessageEmotion(transcript),

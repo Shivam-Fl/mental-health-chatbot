@@ -11,7 +11,7 @@ interface Message {
   id: string
   role: "user" | "assistant"
   content: string
-  message_type: "text" | "audio" | "video" | "emotion_event"
+  message_type: "text" | "audio" | "video"
   emotion_detected?: string
   created_at: string
 }
@@ -24,8 +24,10 @@ export function ChatMessages({ messages }: ChatMessagesProps) {
   const scrollAreaRef = useRef<HTMLDivElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  // Filter out silent emotion-event rows (used for realtime video analytics)
-  const visibleMessages = messages.filter((m) => m.message_type !== "emotion_event" && m.content)
+  // Filter out silent realtime-emotion rows (content marker "__emotion_event__") used for video analytics
+  const visibleMessages = messages.filter(
+    (m) => m.content && m.content !== "__emotion_event__"
+  )
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
