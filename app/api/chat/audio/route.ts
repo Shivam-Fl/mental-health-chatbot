@@ -144,13 +144,14 @@ export async function POST(req: Request) {
     })
   } catch (error) {
     console.error("Audio chat API error:", error)
-    return Response.json(
-      {
-        response:
-          "I'm sorry, I'm having trouble processing your audio right now. Let me know if you'd like to continue with text, and I'm here to support you.",
-        error: "Audio processing failed",
-      },
-      { status: 500 },
-    )
+    // Return 200 with a fallback spoken response so the audio/TTS flow
+    // can still deliver a message to the user instead of failing silently.
+    return Response.json({
+      response:
+        "I'm sorry, I'm having trouble processing your audio right now. Let me know if you'd like to continue with text, and I'm here to support you.",
+      error: "Audio processing failed",
+      conversation_id: null,
+      timestamp: new Date().toISOString(),
+    })
   }
 }
