@@ -21,8 +21,10 @@ interface AudioChatRequest {
 }
 
 export async function POST(req: Request) {
+  let requestConversationId: string | undefined
   try {
     const { transcript, audioData, conversationId, faceEmotion, hasVideo }: AudioChatRequest = await req.json()
+    requestConversationId = conversationId
 
     console.log("[DEBUG] Audio API received:", { 
       transcript: transcript?.substring(0, 50) + "...", 
@@ -150,7 +152,7 @@ export async function POST(req: Request) {
       response:
         "I'm sorry, I'm having trouble processing your audio right now. Let me know if you'd like to continue with text, and I'm here to support you.",
       error: "Audio processing failed",
-      conversation_id: null,
+      conversation_id: requestConversationId || null,
       timestamp: new Date().toISOString(),
     })
   }

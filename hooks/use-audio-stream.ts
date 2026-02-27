@@ -286,7 +286,7 @@ export function useAudioStream(options: AudioStreamOptions = {}) {
 
         // If the response is not ok AND there's no fallback message, throw
         if (!response.ok && !data?.response) {
-          throw new Error("Failed to process audio")
+          throw new Error(`Failed to process audio (status ${response.status})`)
         }
 
         // Speak the response (works for both success and fallback responses)
