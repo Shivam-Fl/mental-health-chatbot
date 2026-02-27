@@ -1,14 +1,22 @@
 /**
  * Vertex AI REST API helper — replaces the @google/generative-ai SDK.
  *
- * All AI requests are routed through:
- *   https://aiplatform.googleapis.com/v1/publishers/google/models/{model}
+ * All AI requests are routed through a regional Vertex AI endpoint:
+ *   https://{region}-aiplatform.googleapis.com/v1/publishers/google/models/{model}
  *
+ * Set VERTEX_AI_REGION to override the region (default: asia-south1 / Mumbai).
  * Requires the VERTEX_AI_API_KEY environment variable.
  */
 
-const VERTEX_AI_BASE_URL =
-  "https://aiplatform.googleapis.com/v1/publishers/google/models"
+const DEFAULT_REGION = "asia-south1"
+const REGION = process.env.VERTEX_AI_REGION ?? DEFAULT_REGION
+
+const VERTEX_AI_BASE_URL = REGION && REGION.trim()
+  ? `https://${REGION.trim()}-aiplatform.googleapis.com/v1/publishers/google/models`
+  : "https://aiplatform.googleapis.com/v1/publishers/google/models"
+
+/** Timeout in milliseconds for each Vertex AI fetch request (24 s). */
+const REQUEST_TIMEOUT_MS = 24_000
 
 function getApiKey(): string {
   const apiKey = process.env.VERTEX_AI_API_KEY
@@ -86,11 +94,22 @@ export async function generateContent(
   const apiKey = getApiKey()
   const url = `${VERTEX_AI_BASE_URL}/${model}:generateContent?key=${apiKey}`
 
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(request),
-  })
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
+
+  let res: Response
+  try {
+    res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(request),
+      signal: controller.signal,
+    })
+  } finally {
+    clearTimeout(timeoutId)
+  }
 
   if (!res.ok) {
     const errorBody = await res.text()
