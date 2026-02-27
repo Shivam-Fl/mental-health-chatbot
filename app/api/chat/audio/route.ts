@@ -1,4 +1,4 @@
-import { streamGenerateContent } from "@/lib/gemini"
+import { streamGenerateContent, getModelName } from "@/lib/gemini"
 import { createClient } from "@/lib/supabase/server"
 import { PSYCHIATRIST_SYSTEM_PROMPT, VOICE_SESSION_NOTE, analyzeMessageEmotion } from "@/lib/mental-health-prompts"
 
@@ -87,7 +87,7 @@ export async function POST(req: Request) {
 
     // Run AI response generation and emotion detection in parallel
     const [fullResponse, emotionResult] = await Promise.all([
-      streamGenerateContent("gemini-2.5-flash", {
+      streamGenerateContent(getModelName(), {
         contents: [{ role: "user", parts: [{ text: conversationHistory }] }],
         generationConfig: {
           temperature: 0.8,

@@ -1,4 +1,4 @@
-import { generateContent } from "@/lib/gemini"
+import { generateContent, getModelName } from "@/lib/gemini"
 import { createClient } from "@/lib/supabase/server"
 import { type NextRequest, NextResponse } from "next/server"
 
@@ -47,7 +47,7 @@ Rules:
 - progressMetrics: count concrete coping strategies mentioned, genuine insights/realizations the user expressed, and explicit action plans the user stated.
 - overallSentiment: overall emotional tone of the whole conversation (-1=very negative, 0=neutral, +1=very positive).`
 
-    const text = await generateContent("gemini-2.5-flash", {
+    const text = await generateContent(getModelName(), {
       contents: [{ role: "user", parts: [{ text: prompt }] }],
       generationConfig: { temperature: 0.1, maxOutputTokens: 500 },
     })

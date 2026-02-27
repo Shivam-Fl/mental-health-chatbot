@@ -18,6 +18,12 @@ function getApiKey(): string {
   return apiKey
 }
 
+const DEFAULT_MODEL = "gemini-2.5-flash"
+
+export function getModelName(): string {
+  return process.env.GEMINI_MODEL || DEFAULT_MODEL
+}
+
 // ── Types ────────────────────────────────────────────────────────────────────
 
 export interface ContentPart {

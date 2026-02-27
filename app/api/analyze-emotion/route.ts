@@ -1,4 +1,4 @@
-import { generateContent } from "@/lib/gemini"
+import { generateContent, getModelName } from "@/lib/gemini"
 import { z } from "zod"
 import { createClient } from "@/lib/supabase/server"
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit"
@@ -97,7 +97,7 @@ Please respond in JSON format with the following structure:
 }`
 
     console.log("[DEBUG] Sending to Gemini for analysis")
-    const text = await generateContent("gemini-2.5-flash", {
+    const text = await generateContent(getModelName(), {
       contents: [
         {
           role: "user",
