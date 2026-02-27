@@ -92,7 +92,7 @@ export async function generateContent(
   }
 
   const data: GenerateContentResponseBody = await res.json()
-  const text = extractText(data.candidates)
+  const text = extractText(data.candidates).trim()
   if (!text) {
     throw new Error("Empty response from Vertex AI API")
   }
@@ -101,33 +101,14 @@ export async function generateContent(
 
 /**
  * Streaming content generation.
- * The endpoint returns a JSON array of chunks; we concatenate all text parts
- * and return the full string (the caller already collects everything before
- * responding to the client, so true streaming isn't needed).
+ * Note: since all current callers collect the complete response before
+ * returning to the client, this uses the non-streaming endpoint internally
+ * to avoid response-format ambiguity. If true streaming to the client is
+ * needed in the future, this can be updated to parse SSE / NDJSON.
  */
 export async function streamGenerateContent(
   model: string,
   request: GenerateContentRequest,
 ): Promise<string> {
-  const apiKey = getApiKey()
-  const url = `${VERTEX_AI_BASE_URL}/${model}:streamGenerateContent?key=${apiKey}`
-
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(request),
-  })
-
-  if (!res.ok) {
-    const errorBody = await res.text()
-    throw new Error(`Vertex AI API error (${res.status}): ${errorBody}`)
-  }
-
-  const chunks: GenerateContentResponseBody[] = await res.json()
-
-  let fullText = ""
-  for (const chunk of chunks) {
-    fullText += extractText(chunk.candidates)
-  }
-  return fullText
+  return generateContent(model, request)
 }
