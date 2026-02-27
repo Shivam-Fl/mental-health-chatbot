@@ -168,15 +168,7 @@ export async function analyzeEmotion({
   isVideoCall?: boolean
   visualAnalysis?: any
 }): Promise<{ content: string; emotion_detected: string }> {
-  // Import GoogleGenerativeAI dynamically to avoid issues
-  const { GoogleGenerativeAI } = await import("@google/generative-ai")
-  
-  if (!process.env.GOOGLE_API_KEY) {
-    throw new Error("GOOGLE_API_KEY environment variable is not set")
-  }
-  
-  const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY)
-  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" })
+  const { generateContent } = await import("@/lib/gemini")
 
   // Enhanced prompt based on emotion and context
   let emotionGuidance = ""
@@ -274,21 +266,19 @@ User message: "${message}"
 Respond now as Dr. Aura, following the conversational and formatting guidelines already given. Apply the emotion-specific approach above to this moment.${isVideoCall ? " This is a video session — you can see the person, so acknowledge the visual dimension naturally when relevant." : ""}`
 
   try {
-    const result = await model.generateContent({
+    const text = await generateContent("gemini-2.5-flash", {
       contents: [{ role: "user", parts: [{ text: fullPrompt }] }],
       generationConfig: {
         temperature: 0.7,
         maxOutputTokens: 1024,  // generous ceiling — prompt controls conciseness
       },
     })
-    const response = await result.response
-    const content = response.text()
 
     // Determine the emotion detected in the AI's response
-    const aiEmotionDetected = detectEmotionInResponse(content)
+    const aiEmotionDetected = detectEmotionInResponse(text)
 
     return {
-      content: content.trim(),
+      content: text.trim(),
       emotion_detected: aiEmotionDetected
     }
   } catch (error) {
@@ -370,12 +360,7 @@ export interface MessageEmotionResult {
  */
 export async function analyzeMessageEmotion(message: string): Promise<MessageEmotionResult> {
   try {
-    const { GoogleGenerativeAI } = await import("@google/generative-ai")
-    if (!process.env.GOOGLE_API_KEY) {
-      throw new Error("GOOGLE_API_KEY not set")
-    }
-    const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY)
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" })
+    const { generateContent } = await import("@/lib/gemini")
 
     const prompt = `Classify the emotional state expressed in this message. Be precise — do NOT default to neutral unless the message is genuinely informational with no emotional content.
 
@@ -399,12 +384,11 @@ Valid emotion labels and when to use them:
 confidence: how certain you are (0.0 = guessing, 1.0 = very clear)
 sentiment: overall emotional valence (-1.0 = very negative, 0.0 = neutral, 1.0 = very positive)`
 
-    const result = await model.generateContent({
+    const text = await generateContent("gemini-2.5-flash", {
       contents: [{ role: "user", parts: [{ text: prompt }] }],
       generationConfig: { temperature: 0.1, maxOutputTokens: 80 },
     })
 
-    const text = result.response.text().trim()
     // Extract the first JSON object from the response
     const jsonMatch = text.match(/\{[^{}]+\}/)
     if (jsonMatch) {

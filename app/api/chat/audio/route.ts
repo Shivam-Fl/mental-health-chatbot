@@ -1,16 +1,8 @@
-import { GoogleGenerativeAI } from "@google/generative-ai"
+import { streamGenerateContent } from "@/lib/gemini"
 import { createClient } from "@/lib/supabase/server"
 import { PSYCHIATRIST_SYSTEM_PROMPT, VOICE_SESSION_NOTE, analyzeMessageEmotion } from "@/lib/mental-health-prompts"
 
 export const maxDuration = 30
-
-// Helper function to get Google AI instance with runtime validation
-function getGoogleAI() {
-  if (!process.env.GOOGLE_API_KEY) {
-    throw new Error("GOOGLE_API_KEY environment variable is not set")
-  }
-  return new GoogleGenerativeAI(process.env.GOOGLE_API_KEY)
-}
 
 interface AudioChatRequest {
   transcript: string
@@ -93,12 +85,9 @@ export async function POST(req: Request) {
     
     conversationHistory += currentInput
 
-    const genAI = getGoogleAI()
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" })
-
     // Run AI response generation and emotion detection in parallel
-    const [result, emotionResult] = await Promise.all([
-      model.generateContentStream({
+    const [fullResponse, emotionResult] = await Promise.all([
+      streamGenerateContent("gemini-2.5-flash", {
         contents: [{ role: "user", parts: [{ text: conversationHistory }] }],
         generationConfig: {
           temperature: 0.8,
@@ -107,12 +96,6 @@ export async function POST(req: Request) {
       }),
       analyzeMessageEmotion(transcript),
     ])
-
-    let fullResponse = ""
-    for await (const chunk of result.stream) {
-      const chunkText = chunk.text()
-      fullResponse += chunkText
-    }
 
     // Use face emotion if available and high-confidence, otherwise use AI text emotion
     const aiTextEmotion = emotionResult.emotion
