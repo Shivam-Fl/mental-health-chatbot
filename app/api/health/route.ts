@@ -22,8 +22,8 @@ export async function GET() {
     missingVars.push('NEXT_PUBLIC_SUPABASE_ANON_KEY')
   }
   
-  if (!process.env.GOOGLE_API_KEY) {
-    missingVars.push('GOOGLE_API_KEY')
+  if (!process.env.VERTEX_AI_API_KEY) {
+    missingVars.push('VERTEX_AI_API_KEY')
   }
 
   if (missingVars.length > 0) {

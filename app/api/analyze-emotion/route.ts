@@ -1,16 +1,8 @@
-import { GoogleGenerativeAI } from "@google/generative-ai"
+import { generateContent, getModelName } from "@/lib/gemini"
 import { z } from "zod"
 import { createClient } from "@/lib/supabase/server"
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit"
 import { logSecurityEvent } from "@/lib/security"
-
-// Helper function to get Google AI instance with runtime validation
-function getGoogleAI() {
-  if (!process.env.GOOGLE_API_KEY) {
-    throw new Error("GOOGLE_API_KEY environment variable is not set")
-  }
-  return new GoogleGenerativeAI(process.env.GOOGLE_API_KEY)
-}
 
 const emotionAnalysisSchema = z.object({
   emotion: z.enum(["joy", "sadness", "anger", "fear", "surprise", "disgust", "neutral", "anxiety", "stress"]),
@@ -74,8 +66,6 @@ export async function POST(req: Request) {
     }
 
     console.log("[DEBUG] Image received, length:", image.length)
-    const genAI = getGoogleAI()
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" })
 
     const prompt = `Analyze this facial image for emotional state and mental health indicators. Focus on:
 
@@ -107,19 +97,19 @@ Please respond in JSON format with the following structure:
 }`
 
     console.log("[DEBUG] Sending to Gemini for analysis")
-    const result = await model.generateContent([
-      { text: prompt },
-      {
-        inlineData: {
-          mimeType: "image/jpeg",
-          data: image,
+    const text = await generateContent(getModelName(), {
+      contents: [
+        {
+          role: "user",
+          parts: [
+            { text: prompt },
+            { inlineData: { mimeType: "image/jpeg", data: image } },
+          ],
         },
-      },
-    ])
+      ],
+    })
 
     console.log("[DEBUG] Gemini analysis completed")
-    const response = await result.response
-    const text = response.text()
     console.log("[DEBUG] Gemini response text:", text.substring(0, 200))
 
     // Parse the JSON response

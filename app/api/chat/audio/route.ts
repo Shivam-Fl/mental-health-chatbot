@@ -1,16 +1,8 @@
-import { GoogleGenerativeAI } from "@google/generative-ai"
+import { streamGenerateContent, getModelName } from "@/lib/gemini"
 import { createClient } from "@/lib/supabase/server"
 import { PSYCHIATRIST_SYSTEM_PROMPT, VOICE_SESSION_NOTE, analyzeMessageEmotion } from "@/lib/mental-health-prompts"
 
 export const maxDuration = 30
-
-// Helper function to get Google AI instance with runtime validation
-function getGoogleAI() {
-  if (!process.env.GOOGLE_API_KEY) {
-    throw new Error("GOOGLE_API_KEY environment variable is not set")
-  }
-  return new GoogleGenerativeAI(process.env.GOOGLE_API_KEY)
-}
 
 interface AudioChatRequest {
   transcript: string
@@ -21,8 +13,10 @@ interface AudioChatRequest {
 }
 
 export async function POST(req: Request) {
+  let requestConversationId: string | undefined
   try {
     const { transcript, audioData, conversationId, faceEmotion, hasVideo }: AudioChatRequest = await req.json()
+    requestConversationId = conversationId
 
     console.log("[DEBUG] Audio API received:", { 
       transcript: transcript?.substring(0, 50) + "...", 
@@ -91,12 +85,9 @@ export async function POST(req: Request) {
     
     conversationHistory += currentInput
 
-    const genAI = getGoogleAI()
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" })
-
     // Run AI response generation and emotion detection in parallel
-    const [result, emotionResult] = await Promise.all([
-      model.generateContentStream({
+    const [fullResponse, emotionResult] = await Promise.all([
+      streamGenerateContent(getModelName(), {
         contents: [{ role: "user", parts: [{ text: conversationHistory }] }],
         generationConfig: {
           temperature: 0.8,
@@ -105,12 +96,6 @@ export async function POST(req: Request) {
       }),
       analyzeMessageEmotion(transcript),
     ])
-
-    let fullResponse = ""
-    for await (const chunk of result.stream) {
-      const chunkText = chunk.text()
-      fullResponse += chunkText
-    }
 
     // Use face emotion if available and high-confidence, otherwise use AI text emotion
     const aiTextEmotion = emotionResult.emotion
@@ -144,13 +129,14 @@ export async function POST(req: Request) {
     })
   } catch (error) {
     console.error("Audio chat API error:", error)
-    return Response.json(
-      {
-        response:
-          "I'm sorry, I'm having trouble processing your audio right now. Let me know if you'd like to continue with text, and I'm here to support you.",
-        error: "Audio processing failed",
-      },
-      { status: 500 },
-    )
+    // Return 200 with a fallback spoken response so the audio/TTS flow
+    // can still deliver a message to the user instead of failing silently.
+    return Response.json({
+      response:
+        "I'm sorry, I'm having trouble processing your audio right now. Let me know if you'd like to continue with text, and I'm here to support you.",
+      error: "Audio processing failed",
+      conversation_id: requestConversationId || null,
+      timestamp: new Date().toISOString(),
+    })
   }
 }

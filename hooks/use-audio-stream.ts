@@ -281,12 +281,15 @@ export function useAudioStream(options: AudioStreamOptions = {}) {
           }),
         })
 
-        if (!response.ok) throw new Error("Failed to process audio")
-
         const data = await response.json()
         console.log("[DEBUG] Audio API response:", data)
 
-        // Speak the response
+        // If the response is not ok AND there's no fallback message, throw
+        if (!response.ok && !data?.response) {
+          throw new Error(`Failed to process audio (status ${response.status})`)
+        }
+
+        // Speak the response (works for both success and fallback responses)
         if (data.response) {
           await speakText(data.response)
         }

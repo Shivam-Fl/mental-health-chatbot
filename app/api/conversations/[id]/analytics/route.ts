@@ -1,11 +1,6 @@
-import { GoogleGenerativeAI } from "@google/generative-ai"
+import { generateContent, getModelName } from "@/lib/gemini"
 import { createClient } from "@/lib/supabase/server"
 import { type NextRequest, NextResponse } from "next/server"
-
-function getGoogleAI() {
-  if (!process.env.GOOGLE_API_KEY) return null
-  return new GoogleGenerativeAI(process.env.GOOGLE_API_KEY)
-}
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -18,12 +13,9 @@ interface AIAnalysisResult {
 // ─── AI batch analysis of the full conversation ──────────────────────────────
 
 async function analyzeConversationWithAI(messages: any[]): Promise<AIAnalysisResult | null> {
-  const genAI = getGoogleAI()
-  if (!genAI || messages.length === 0) return null
+  if (!process.env.VERTEX_AI_API_KEY || messages.length === 0) return null
 
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" })
-
     // Build a condensed conversation transcript (last 40 messages, 300 chars each)
     // messages is already filtered to exclude emotion_event rows (handled by the caller)
     const transcript = messages
@@ -55,12 +47,11 @@ Rules:
 - progressMetrics: count concrete coping strategies mentioned, genuine insights/realizations the user expressed, and explicit action plans the user stated.
 - overallSentiment: overall emotional tone of the whole conversation (-1=very negative, 0=neutral, +1=very positive).`
 
-    const result = await model.generateContent({
+    const text = await generateContent(getModelName(), {
       contents: [{ role: "user", parts: [{ text: prompt }] }],
       generationConfig: { temperature: 0.1, maxOutputTokens: 500 },
     })
 
-    const text = result.response.text().trim()
     const jsonMatch = text.match(/\{[\s\S]*\}/)
     if (!jsonMatch) return null
     const parsed = JSON.parse(jsonMatch[0])
