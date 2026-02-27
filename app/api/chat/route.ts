@@ -75,7 +75,7 @@ export async function POST(req: Request) {
       .select("role, content, emotion_detected")
       .eq("conversation_id", conversationId)
       .order("created_at", { ascending: true })
-      .limit(50) // Last 50 messages for better context
+      .limit(20) // Last 20 messages — enough context while reducing input tokens
 
     if (messagesError) {
       console.error("Error fetching messages:", messagesError)
