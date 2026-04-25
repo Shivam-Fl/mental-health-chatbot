@@ -260,7 +260,7 @@ export function SessionAnalytics({ conversationId, onClose }: SessionAnalyticsPr
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="emotion" tick={{ fontSize: 11 }} />
                   <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
-                  <Tooltip formatter={(v: number | undefined) => [v ?? 0, "occurrences"]} />
+                  <Tooltip formatter={(value) => [Number(value ?? 0), "occurrences"]} />
                   <Bar dataKey="count" radius={[4, 4, 0, 0]}>
                     {emotionDistData.map((entry, i) => (
                       <Cell key={i} fill={entry.fill} />
