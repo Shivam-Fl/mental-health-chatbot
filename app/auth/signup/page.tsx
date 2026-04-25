@@ -18,6 +18,7 @@ export default function SignUpPage() {
   const [password, setPassword] = useState("")
   const [fullName, setFullName] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
+  const [role, setRole] = useState<"patient" | "psychiatrist" | "psychologist">("patient")
   const [error, setError] = useState<string | null>(null)
   const [passwordErrors, setPasswordErrors] = useState<string[]>([])
   const [showPassword, setShowPassword] = useState(false)
@@ -55,9 +56,10 @@ export default function SignUpPage() {
         email,
         password,
         options: {
-          emailRedirectTo: process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || `${window.location.origin}/chat`,
+          emailRedirectTo: process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || `${window.location.origin}/`,
           data: {
             full_name: fullName,
+            role,
           },
         },
       })
@@ -94,6 +96,20 @@ export default function SignUpPage() {
                   className="bg-input border-border"
                   disabled={isLoading}
                 />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="role">Account Type</Label>
+                <select
+                  id="role"
+                  className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
+                  value={role}
+                  onChange={(e) => setRole(e.target.value as "patient" | "psychiatrist" | "psychologist")}
+                  disabled={isLoading}
+                >
+                  <option value="patient">Patient</option>
+                  <option value="psychiatrist">Psychiatrist</option>
+                  <option value="psychologist">Psychologist</option>
+                </select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>

@@ -1,9 +1,40 @@
-import { redirect } from "next/navigation"
-import { createClient } from "@/lib/supabase/server"
 import Link from "next/link"
+import { createClient } from "@/lib/supabase/server"
+import { Brain, LogIn, UserPlus } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Heart, Shield, MessageCircle, Brain, Lock, Sparkles } from "lucide-react"
+import { MarketplaceHome } from "@/components/marketplace/marketplace-home"
+
+type UserRole = "patient" | "psychiatrist" | "psychologist"
+
+interface Profile {
+  id: string
+  full_name: string | null
+  role: UserRole
+}
+
+interface SessionItem {
+  id: string
+  professional_id: string
+  title: string
+  start_time: string
+  duration_minutes: number
+  price_cents: number
+  mode: "online" | "offline"
+  is_active: boolean
+}
+
+interface FeedPost {
+  id: string
+  author_id: string
+  content: string
+  post_type: "post" | "short"
+  created_at: string
+}
+
+interface FeedbackRow {
+  professional_id: string
+  rating: number
+}
 
 export default async function HomePage() {
   const supabase = await createClient()
@@ -11,190 +42,169 @@ export default async function HomePage() {
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (user) {
-    redirect("/chat")
-  }
-
-  return (
-    <div className="min-h-screen bg-background">
-      {/* Navigation */}
-      <nav className="border-b border-border/40 bg-card/50 backdrop-blur-md sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Brain className="w-8 h-8 text-primary" />
-              <span className="text-xl font-semibold">Aura</span>
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto px-4 py-20">
+          <div className="max-w-4xl mx-auto text-center space-y-6">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-border/60 bg-card">
+              <Brain className="h-4 w-4 text-primary" />
+              <span className="text-sm text-muted-foreground">Aura Professional Marketplace</span>
             </div>
-            <div className="flex items-center gap-3">
+            <h1 className="text-4xl md:text-6xl font-bold tracking-tight">Book Mental Health Sessions from Trusted Professionals</h1>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Find psychiatrists and psychologists, book paid sessions, share feedback, and join the community feed. The AI chatbot is still available via the floating button.
+            </p>
+            <div className="flex justify-center gap-3 flex-wrap">
               <Link href="/auth/login">
-                <Button variant="ghost" size="default">
+                <Button size="lg" variant="outline">
+                  <LogIn className="h-4 w-4 mr-2" />
                   Sign In
                 </Button>
               </Link>
               <Link href="/auth/signup">
-                <Button size="default" className="bg-primary hover:bg-primary/90 text-primary-foreground">
-                  Get Started
+                <Button size="lg">
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Create Account
                 </Button>
               </Link>
             </div>
           </div>
         </div>
-      </nav>
-
-      {/* Hero Section */}
-      <div className="container mx-auto px-4 py-20 md:py-28">
-        <div className="text-center max-w-4xl mx-auto mb-24">
-          <div className="inline-flex items-center gap-2 mb-6 px-4 py-2 bg-accent/10 border border-accent/20 rounded-full">
-            <Sparkles className="w-4 h-4 text-accent" />
-            <span className="text-sm font-medium text-accent">AI-Powered Mental Health Support</span>
-          </div>
-          
-          <h1 className="text-5xl md:text-7xl font-bold mb-6 tracking-tight">
-            Your Journey to
-            <span className="block mt-2 bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent animate-gradient">
-              Better Mental Health
-            </span>
-          </h1>
-          
-          <p className="text-xl md:text-2xl text-muted-foreground mb-10 max-w-3xl mx-auto leading-relaxed">
-            Connect with an empathetic AI companion designed to listen, understand, and support you 
-            through every step of your wellness journey.
-          </p>
-          
-          <div className="flex gap-4 justify-center flex-wrap mb-8">
-            <Link href="/auth/signup">
-              <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-6 text-lg rounded-xl shadow-lg hover:shadow-xl transition-all">
-                Start Your Journey
-                <Sparkles className="ml-2 w-5 h-5" />
-              </Button>
-            </Link>
-            <Link href="/auth/login">
-              <Button size="lg" variant="outline" className="px-8 py-6 text-lg rounded-xl border-2">
-                Sign In
-              </Button>
-            </Link>
-          </div>
-          
-          <p className="text-sm text-muted-foreground flex items-center justify-center gap-2">
-            <Shield className="w-4 h-4" />
-            Private, secure, and available 24/7
-          </p>
-        </div>
-
-        {/* Features Grid */}
-        <div className="grid md:grid-cols-3 gap-6 mb-24 max-w-6xl mx-auto">
-          <Card className="border border-border/50 hover:border-primary/30 transition-all duration-300 hover:shadow-lg bg-card">
-            <CardHeader className="pb-4">
-              <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mb-4">
-                <MessageCircle className="w-6 h-6 text-primary" />
-              </div>
-              <CardTitle className="text-xl">Empathetic Conversations</CardTitle>
-              <CardDescription className="text-base leading-relaxed">
-                Natural, judgment-free conversations powered by advanced AI trained in mental health support.
-              </CardDescription>
-            </CardHeader>
-          </Card>
-
-          <Card className="border border-border/50 hover:border-accent/30 transition-all duration-300 hover:shadow-lg bg-card">
-            <CardHeader className="pb-4">
-              <div className="w-12 h-12 bg-accent/10 rounded-xl flex items-center justify-center mb-4">
-                <Brain className="w-6 h-6 text-accent" />
-              </div>
-              <CardTitle className="text-xl">Emotion Analysis</CardTitle>
-              <CardDescription className="text-base leading-relaxed">
-                AI-powered emotion detection through text, voice, and facial expressions for personalized support.
-              </CardDescription>
-            </CardHeader>
-          </Card>
-
-          <Card className="border border-border/50 hover:border-primary/30 transition-all duration-300 hover:shadow-lg bg-card">
-            <CardHeader className="pb-4">
-              <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mb-4">
-                <Shield className="w-6 h-6 text-primary" />
-              </div>
-              <CardTitle className="text-xl">Crisis Support</CardTitle>
-              <CardDescription className="text-base leading-relaxed">
-                Immediate access to crisis resources and emergency hotlines when you need urgent help.
-              </CardDescription>
-            </CardHeader>
-          </Card>
-
-          <Card className="border border-border/50 hover:border-accent/30 transition-all duration-300 hover:shadow-lg bg-card">
-            <CardHeader className="pb-4">
-              <div className="w-12 h-12 bg-accent/10 rounded-xl flex items-center justify-center mb-4">
-                <Lock className="w-6 h-6 text-accent" />
-              </div>
-              <CardTitle className="text-xl">Private & Secure</CardTitle>
-              <CardDescription className="text-base leading-relaxed">
-                End-to-end encrypted conversations with strict privacy policies to keep your data safe.
-              </CardDescription>
-            </CardHeader>
-          </Card>
-
-          <Card className="border border-border/50 hover:border-primary/30 transition-all duration-300 hover:shadow-lg bg-card">
-            <CardHeader className="pb-4">
-              <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mb-4">
-                <Heart className="w-6 h-6 text-primary" />
-              </div>
-              <CardTitle className="text-xl">Multi-Modal Support</CardTitle>
-              <CardDescription className="text-base leading-relaxed">
-                Choose between text, voice, or video chat based on your comfort and preferences.
-              </CardDescription>
-            </CardHeader>
-          </Card>
-
-          <Card className="border border-border/50 hover:border-accent/30 transition-all duration-300 hover:shadow-lg bg-card">
-            <CardHeader className="pb-4">
-              <div className="w-12 h-12 bg-accent/10 rounded-xl flex items-center justify-center mb-4">
-                <Sparkles className="w-6 h-6 text-accent" />
-              </div>
-              <CardTitle className="text-xl">Progress Insights</CardTitle>
-              <CardDescription className="text-base leading-relaxed">
-                Track your emotional journey with personalized insights and progress visualization.
-              </CardDescription>
-            </CardHeader>
-          </Card>
-        </div>
-
-        {/* CTA Section */}
-        <div className="text-center max-w-4xl mx-auto">
-          <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 via-accent/5 to-primary/5 shadow-xl">
-            <CardHeader className="space-y-6 py-12">
-              <div className="flex justify-center">
-                <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center">
-                  <Heart className="w-8 h-8 text-primary" />
-                </div>
-              </div>
-              <CardTitle className="text-3xl md:text-4xl font-bold">Ready to Begin?</CardTitle>
-              <CardDescription className="text-lg md:text-xl max-w-2xl mx-auto leading-relaxed">
-                Join thousands who have found comfort and support through Aura. 
-                Your mental health journey starts here, and we&apos;re here every step of the way.
-              </CardDescription>
-              <div className="flex gap-4 justify-center pt-4">
-                <Link href="/auth/signup">
-                  <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground px-10 py-6 text-lg rounded-xl shadow-lg">
-                    Create Free Account
-                  </Button>
-                </Link>
-              </div>
-            </CardHeader>
-          </Card>
-        </div>
-
-        {/* Footer */}
-        <div className="text-center mt-20 pt-12 border-t border-border/50">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <Shield className="w-5 h-5 text-muted-foreground" />
-            <span className="text-sm font-medium text-muted-foreground">Your Privacy Matters</span>
-          </div>
-          <p className="text-sm text-muted-foreground leading-relaxed max-w-2xl mx-auto">
-            Aura provides emotional support and wellness guidance. This AI assistant is designed to complement, 
-            not replace, professional mental health care.
-            <br />
-            <strong className="text-foreground">In crisis?</strong> Call 988 (US Suicide & Crisis Lifeline) or contact your local emergency services immediately.
-          </p>
-        </div>
       </div>
-    </div>
+    )
+  }
+
+  let profile: Profile | null = null
+  const { data: profileData } = await supabase
+    .from("profiles")
+    .select("id, full_name, role")
+    .eq("id", user.id)
+    .maybeSingle()
+
+  if (profileData) {
+    profile = {
+      id: profileData.id,
+      full_name: profileData.full_name,
+      role: (profileData.role || "patient") as UserRole,
+    }
+  }
+
+  let sessions: SessionItem[] = []
+  let posts: FeedPost[] = []
+  let feedbackRows: FeedbackRow[] = []
+  let bookedSessionIds: string[] = []
+  let feedbackTargets: Array<{ booking_id: string; session_id: string; professional_id: string }> = []
+
+  const { data: sessionsData } = await supabase
+    .from("sessions")
+    .select("id, professional_id, title, start_time, duration_minutes, price_cents, mode, is_active")
+    .eq("is_active", true)
+    .order("start_time", { ascending: true })
+    .limit(100)
+
+  if (sessionsData) {
+    sessions = sessionsData as SessionItem[]
+  }
+
+  const { data: postsData } = await supabase
+    .from("social_posts")
+    .select("id, author_id, content, post_type, created_at")
+    .order("created_at", { ascending: false })
+    .limit(50)
+
+  if (postsData) {
+    posts = postsData as FeedPost[]
+  }
+
+  const { data: feedbackData } = await supabase
+    .from("session_feedback")
+    .select("professional_id, rating")
+    .limit(500)
+
+  if (feedbackData) {
+    feedbackRows = feedbackData as FeedbackRow[]
+  }
+
+  if ((profile?.role || "patient") === "patient") {
+    const { data: bookingData } = await supabase
+      .from("bookings")
+      .select("id, session_id, status")
+      .eq("patient_id", user.id)
+      .in("status", ["confirmed", "completed"])
+
+    if (bookingData && bookingData.length > 0) {
+      const sessionIds = bookingData.map((b) => b.session_id)
+      bookedSessionIds = [...new Set(sessionIds)]
+
+      const { data: bookedSessions } = await supabase
+        .from("sessions")
+        .select("id, professional_id")
+        .in("id", sessionIds)
+
+      const { data: existingFeedback } = await supabase
+        .from("session_feedback")
+        .select("booking_id")
+        .in("booking_id", bookingData.map((b) => b.id))
+
+      const feedbackBookingSet = new Set((existingFeedback || []).map((f) => f.booking_id))
+      const sessionToProfessional = new Map((bookedSessions || []).map((s) => [s.id, s.professional_id]))
+
+      feedbackTargets = bookingData
+        .filter((b) => !feedbackBookingSet.has(b.id))
+        .map((b) => ({
+          booking_id: b.id,
+          session_id: b.session_id,
+          professional_id: sessionToProfessional.get(b.session_id) || "",
+        }))
+        .filter((b) => Boolean(b.professional_id))
+    }
+  }
+
+  const profileIds = new Set<string>()
+  sessions.forEach((s) => profileIds.add(s.professional_id))
+  posts.forEach((p) => profileIds.add(p.author_id))
+  feedbackTargets.forEach((f) => profileIds.add(f.professional_id))
+
+  const profilesById: Record<string, { full_name: string | null; role: UserRole }> = {}
+  if (profileIds.size > 0) {
+    const { data: relatedProfiles } = await supabase
+      .from("profiles")
+      .select("id, full_name, role")
+      .in("id", [...profileIds])
+
+    ;(relatedProfiles || []).forEach((p) => {
+      profilesById[p.id] = {
+        full_name: p.full_name,
+        role: (p.role || "patient") as UserRole,
+      }
+    })
+  }
+
+  const ratingsByProfessional = feedbackRows.reduce<Record<string, { average: number; count: number }>>((acc, row) => {
+    if (!acc[row.professional_id]) {
+      acc[row.professional_id] = { average: 0, count: 0 }
+    }
+    acc[row.professional_id].average += row.rating
+    acc[row.professional_id].count += 1
+    return acc
+  }, {})
+
+  Object.keys(ratingsByProfessional).forEach((key) => {
+    const item = ratingsByProfessional[key]
+    item.average = item.count > 0 ? item.average / item.count : 0
+  })
+
+  return (
+    <MarketplaceHome
+      userId={user.id}
+      profile={profile}
+      sessions={sessions}
+      posts={posts}
+      profilesById={profilesById}
+      ratingsByProfessional={ratingsByProfessional}
+      bookedSessionIds={bookedSessionIds}
+      feedbackTargets={feedbackTargets}
+    />
   )
 }

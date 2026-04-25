@@ -80,7 +80,7 @@ GOOGLE_API_KEY=your_google_gemini_api_key
 
 # App Configuration
 NEXT_PUBLIC_APP_URL=http://localhost:3000
-NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL=http://localhost:3000/chat
+NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL=http://localhost:3000/
 
 # Encryption Key (generate with: openssl rand -base64 32)
 CHAT_ENCRYPTION_KEY=your_generated_32_byte_key
@@ -169,7 +169,14 @@ CREATE POLICY "Users can insert own emotion analyses" ON emotion_analyses
   );
 ```
 
-2. Enable email authentication in your Supabase project settings.
+2. Run the marketplace extension SQL (`scripts/003_marketplace.sql`) to enable:
+   - role-based profiles (patient, psychiatrist, psychologist)
+   - professional session listings
+   - paid booking records
+   - ratings/feedback
+   - social posts/shorts
+
+3. Enable email authentication in your Supabase project settings.
 
 ### Running Locally
 
