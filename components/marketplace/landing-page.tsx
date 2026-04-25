@@ -8,6 +8,7 @@ import {
   FileCheck2,
   HeartHandshake,
   LockKeyhole,
+  type LucideIcon,
   MessageCircle,
   ShieldCheck,
   Star,
@@ -58,6 +59,24 @@ const platformCapabilities = [
     title: "AI support stays secondary",
     body: "The chatbot remains available as support from the app, without replacing the care marketplace.",
     icon: MessageCircle,
+  },
+]
+
+const roleDashboards: Array<{ title: string; body: string; Icon: LucideIcon }> = [
+  {
+    title: "Patient dashboard",
+    body: "Browse verified care, book sessions, join appointments, submit reviews.",
+    Icon: Video,
+  },
+  {
+    title: "Professional dashboard",
+    body: "Submit verification, manage settings, publish sessions, track bookings.",
+    Icon: BadgeCheck,
+  },
+  {
+    title: "Admin dashboard",
+    body: "Review professional documents and approve or reject marketplace access.",
+    Icon: LockKeyhole,
   },
 ]
 
@@ -236,11 +255,7 @@ export function LandingPage() {
           </p>
         </div>
         <div className="grid gap-3">
-          {[
-            ["Patient dashboard", "Browse verified care, book sessions, join appointments, submit reviews.", Video],
-            ["Professional dashboard", "Submit verification, manage settings, publish sessions, track bookings.", BadgeCheck],
-            ["Admin dashboard", "Review professional documents and approve or reject marketplace access.", LockKeyhole],
-          ].map(([title, body, Icon]) => (
+          {roleDashboards.map(({ title, body, Icon }) => (
             <div key={String(title)} className="flex gap-4 rounded-md border border-border bg-card p-4">
               <div className="flex size-10 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
                 <Icon className="size-5" />
