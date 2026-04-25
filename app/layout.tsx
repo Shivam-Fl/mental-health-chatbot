@@ -4,8 +4,9 @@ import { GeistSans } from "geist/font/sans"
 import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "Aura - Mental Health Support Chatbot",
-  description: "Professional AI-powered mental health support with text, audio, and video capabilities. Your safe space for emotional wellness.",
+  title: "Aura Care - Mental Health Marketplace",
+  description:
+    "Book verified psychiatrists and psychologists, attend paid sessions, share feedback, and access Aura's embedded AI support chatbot.",
   generator: 'v0.app'
 }
 

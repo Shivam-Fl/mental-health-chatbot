@@ -16,6 +16,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState<string | null>(null)
+  const [resetMessage, setResetMessage] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
@@ -32,9 +33,33 @@ export default function LoginPage() {
         password,
       })
       if (error) throw error
-      router.push("/chat")
+      router.push("/dashboard")
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handlePasswordReset = async () => {
+    if (!email) {
+      setError("Enter your email first, then request a reset link.")
+      return
+    }
+
+    const supabase = createClient()
+    setIsLoading(true)
+    setError(null)
+    setResetMessage(null)
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/login`,
+      })
+      if (error) throw error
+      setResetMessage("Password recovery email sent. Check your inbox for the reset link.")
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : "Unable to send password reset email")
     } finally {
       setIsLoading(false)
     }
@@ -90,6 +115,7 @@ export default function LoginPage() {
                 </div>
               </div>
               {error && <p className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">{error}</p>}
+              {resetMessage && <p className="text-sm text-primary bg-primary/10 p-3 rounded-md">{resetMessage}</p>}
               <Button
                 type="submit"
                 className="w-full bg-therapeutic hover:bg-therapeutic/90 text-therapeutic-foreground"
@@ -103,6 +129,9 @@ export default function LoginPage() {
                 ) : (
                   "Sign In"
                 )}
+              </Button>
+              <Button type="button" variant="ghost" className="w-full" onClick={handlePasswordReset} disabled={isLoading}>
+                Forgot password?
               </Button>
             </form>
             <div className="mt-6 text-center text-sm space-y-2">
