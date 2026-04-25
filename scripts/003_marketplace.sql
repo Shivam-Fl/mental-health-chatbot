@@ -1,7 +1,28 @@
 -- Marketplace extension: roles, sessions, bookings, feedback, and social posts
 
 ALTER TABLE public.profiles
-  ADD COLUMN IF NOT EXISTS role TEXT NOT NULL DEFAULT 'patient' CHECK (role IN ('patient', 'psychiatrist', 'psychologist'));
+  ADD COLUMN IF NOT EXISTS role TEXT;
+
+UPDATE public.profiles
+SET role = 'patient'
+WHERE role IS NULL OR role NOT IN ('patient', 'psychiatrist', 'psychologist');
+
+ALTER TABLE public.profiles
+  ALTER COLUMN role SET DEFAULT 'patient';
+
+ALTER TABLE public.profiles
+  ALTER COLUMN role SET NOT NULL;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'profiles_role_check' AND conrelid = 'public.profiles'::regclass
+  ) THEN
+    ALTER TABLE public.profiles
+      ADD CONSTRAINT profiles_role_check CHECK (role IN ('patient', 'psychiatrist', 'psychologist'));
+  END IF;
+END $$;
 
 -- Public read for marketplace discovery (name + role visibility)
 DO $$
@@ -22,7 +43,7 @@ CREATE TABLE IF NOT EXISTS public.sessions (
   professional_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
   title TEXT NOT NULL,
   start_time TIMESTAMP WITH TIME ZONE NOT NULL,
-  duration_minutes INTEGER NOT NULL CHECK (duration_minutes >= 15 AND duration_minutes <= 240),
+  duration_minutes INTEGER NOT NULL CHECK (duration_minutes >= 15 AND duration_minutes <= 180),
   price_cents INTEGER NOT NULL CHECK (price_cents > 0),
   mode TEXT NOT NULL CHECK (mode IN ('online', 'offline')),
   is_active BOOLEAN NOT NULL DEFAULT true,
@@ -92,6 +113,13 @@ BEGIN
           SELECT 1 FROM public.profiles p
           WHERE p.id = auth.uid() AND p.role IN ('psychiatrist', 'psychologist')
         )
+      )
+      WITH CHECK (
+        auth.uid() = professional_id
+        AND EXISTS (
+          SELECT 1 FROM public.profiles p
+          WHERE p.id = auth.uid() AND p.role IN ('psychiatrist', 'psychologist')
+        )
       );
   END IF;
 END $$;
@@ -153,7 +181,8 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='session_feedback' AND policyname='session_feedback_update_professional') THEN
     CREATE POLICY "session_feedback_update_professional"
       ON public.session_feedback FOR UPDATE
-      USING (auth.uid() = professional_id OR auth.uid() = patient_id);
+      USING (auth.uid() = professional_id OR auth.uid() = patient_id)
+      WITH CHECK (auth.uid() = professional_id OR auth.uid() = patient_id);
   END IF;
 END $$;
 

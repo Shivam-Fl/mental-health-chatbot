@@ -60,6 +60,13 @@ interface MarketplaceHomeProps {
   feedbackTargets: FeedbackTarget[]
 }
 
+const DEFAULT_SESSION_TITLE = "1:1 Support Session"
+const PENDING_PAYMENT_PROVIDER = "pending_integration"
+
+function formatINR(cents: number) {
+  return `₹${(cents / 100).toFixed(0)}`
+}
+
 export function MarketplaceHome({
   userId,
   profile,
@@ -99,13 +106,25 @@ export function MarketplaceHome({
 
     setBusyKey("create-session")
     setError(null)
+    const parsedDuration = Number.parseInt(sessionForm.duration_minutes, 10)
+    const parsedPriceInr = Number.parseInt(sessionForm.price_inr, 10)
+    if (Number.isNaN(parsedDuration) || parsedDuration < 15 || parsedDuration > 180) {
+      setError("Duration must be between 15 and 180 minutes.")
+      setBusyKey(null)
+      return
+    }
+    if (Number.isNaN(parsedPriceInr) || parsedPriceInr <= 0) {
+      setError("Price must be a valid positive amount.")
+      setBusyKey(null)
+      return
+    }
 
     const { error } = await supabase.from("sessions").insert({
       professional_id: userId,
-      title: sessionForm.title.trim() || "1:1 Support Session",
+      title: sessionForm.title.trim() || DEFAULT_SESSION_TITLE,
       start_time: new Date(sessionForm.start_time).toISOString(),
-      duration_minutes: Number.parseInt(sessionForm.duration_minutes, 10),
-      price_cents: Math.round(Number.parseFloat(sessionForm.price_inr) * 100),
+      duration_minutes: parsedDuration,
+      price_cents: parsedPriceInr * 100,
       mode: sessionForm.mode,
       is_active: true,
     })
@@ -130,14 +149,20 @@ export function MarketplaceHome({
 
     setBusyKey(`book-${sessionId}`)
     setError(null)
+    const session = sessions.find((s) => s.id === sessionId)
+    if (!session) {
+      setError("Session is no longer available. Please refresh and try again.")
+      setBusyKey(null)
+      return
+    }
 
     const { error } = await supabase.from("bookings").insert({
       session_id: sessionId,
       patient_id: userId,
       status: "confirmed",
-      payment_status: "paid",
-      amount_cents: sessions.find((s) => s.id === sessionId)?.price_cents ?? 0,
-      payment_provider: "manual",
+      payment_status: "pending",
+      amount_cents: session.price_cents,
+      payment_provider: PENDING_PAYMENT_PROVIDER,
     })
 
     if (error) {
@@ -164,6 +189,18 @@ export function MarketplaceHome({
 
     if (error) {
       setError(error.message)
+      setBusyKey(null)
+      return
+    }
+
+    const { error: bookingUpdateError } = await supabase
+      .from("bookings")
+      .update({ status: "cancelled" })
+      .eq("session_id", sessionId)
+      .neq("status", "completed")
+
+    if (bookingUpdateError) {
+      setError(bookingUpdateError.message)
       setBusyKey(null)
       return
     }
@@ -200,11 +237,17 @@ export function MarketplaceHome({
     if (!userId) return requireLogin()
 
     const value = feedback[bookingId]
-    const rating = Number.parseInt(value?.rating || "0", 10)
-    if (!rating || rating < 1 || rating > 5) {
+    if (!value?.rating) {
       setError("Please choose a rating between 1 and 5.")
       return
     }
+    const rating = Number.parseInt(value.rating, 10)
+    if (Number.isNaN(rating) || rating < 1 || rating > 5) {
+      setError("Please choose a rating between 1 and 5.")
+      return
+    }
+    const commentValue = value?.comment || ""
+    const trimmedComment = commentValue.trim() ? commentValue.trim() : null
 
     setBusyKey(`feedback-${bookingId}`)
     setError(null)
@@ -214,7 +257,7 @@ export function MarketplaceHome({
       professional_id: professionalId,
       patient_id: userId,
       rating,
-      comment: (value?.comment || "").trim() || null,
+      comment: trimmedComment,
     })
 
     if (error) {
@@ -262,7 +305,6 @@ export function MarketplaceHome({
                     value={sessionForm.title}
                     onChange={(e) => setSessionForm((p) => ({ ...p, title: e.target.value }))}
                     placeholder="Anxiety support session"
-                    required
                   />
                 </div>
                 <div className="space-y-2">
@@ -293,6 +335,7 @@ export function MarketplaceHome({
                     id="price"
                     type="number"
                     min={1}
+                    step={1}
                     value={sessionForm.price_inr}
                     onChange={(e) => setSessionForm((p) => ({ ...p, price_inr: e.target.value }))}
                     required
@@ -350,7 +393,7 @@ export function MarketplaceHome({
                     </p>
                     <p className="text-muted-foreground">Duration: {session.duration_minutes} min • {session.mode}</p>
                     <p className="flex items-center gap-2 font-medium">
-                      <BadgeIndianRupee className="h-4 w-4" /> {(session.price_cents / 100).toFixed(0)}
+                      <BadgeIndianRupee className="h-4 w-4" /> {formatINR(session.price_cents)}
                     </p>
                     <p className="flex items-center gap-2 text-muted-foreground">
                       <Star className="h-4 w-4" /> {rating ? `${rating.average.toFixed(1)} (${rating.count})` : "No ratings yet"}

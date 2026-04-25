@@ -88,7 +88,9 @@ CHAT_ENCRYPTION_KEY=your_generated_32_byte_key
 
 ### Database Setup
 
-1. Create the following tables in your Supabase project:
+1. Run SQL scripts in order from the `scripts/` folder: `001_create_tables.sql`, `002_create_profile_trigger.sql`, then `003_marketplace.sql`.
+
+2. If you prefer manual setup instead of scripts, create the following tables in your Supabase project:
 
 ```sql
 -- Conversations table
@@ -169,14 +171,14 @@ CREATE POLICY "Users can insert own emotion analyses" ON emotion_analyses
   );
 ```
 
-2. Run the marketplace extension SQL (`scripts/003_marketplace.sql`) to enable:
+3. The marketplace extension SQL (`scripts/003_marketplace.sql`) enables:
    - role-based profiles (patient, psychiatrist, psychologist)
    - professional session listings
    - paid booking records
    - ratings/feedback
    - social posts/shorts
 
-3. Enable email authentication in your Supabase project settings.
+4. Enable email authentication in your Supabase project settings.
 
 ### Running Locally
 

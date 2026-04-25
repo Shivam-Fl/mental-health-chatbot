@@ -173,7 +173,8 @@ export default async function HomePage() {
       .select("id, full_name, role")
       .in("id", [...profileIds])
 
-    ;(relatedProfiles || []).forEach((p) => {
+    const relatedProfilesList = relatedProfiles || []
+    relatedProfilesList.forEach((p) => {
       profilesById[p.id] = {
         full_name: p.full_name,
         role: (p.role || "patient") as UserRole,

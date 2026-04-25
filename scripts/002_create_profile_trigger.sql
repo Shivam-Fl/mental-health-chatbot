@@ -10,7 +10,11 @@ BEGIN
   VALUES (
     NEW.id,
     COALESCE(NEW.raw_user_meta_data ->> 'full_name', 'Anonymous User'),
-    COALESCE(NEW.raw_user_meta_data ->> 'role', 'patient')
+    CASE
+      WHEN NEW.raw_user_meta_data ->> 'role' IN ('patient', 'psychiatrist', 'psychologist')
+        THEN NEW.raw_user_meta_data ->> 'role'
+      ELSE 'patient'
+    END
   )
   ON CONFLICT (id) DO NOTHING;
   

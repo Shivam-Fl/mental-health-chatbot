@@ -25,6 +25,7 @@ export default function SignUpPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
+  const emailRedirectUrl = process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || process.env.NEXT_PUBLIC_APP_URL
 
   const handlePasswordChange = (value: string) => {
     setPassword(value)
@@ -56,7 +57,7 @@ export default function SignUpPage() {
         email,
         password,
         options: {
-          emailRedirectTo: process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || `${window.location.origin}/`,
+          ...(emailRedirectUrl ? { emailRedirectTo: emailRedirectUrl } : {}),
           data: {
             full_name: fullName,
             role,
