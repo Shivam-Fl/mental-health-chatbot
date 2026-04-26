@@ -89,18 +89,13 @@ export function LandingPage() {
             <div className="flex size-9 items-center justify-center rounded-md bg-primary text-primary-foreground">
               <HeartHandshake className="size-5" />
             </div>
-            <span className="text-lg font-semibold">Aura Care</span>
+            <span className="text-lg font-semibold">Psyspace</span>
           </Link>
           <div className="hidden items-center gap-6 text-sm text-muted-foreground md:flex">
-            <a href="#patients" className="hover:text-foreground">
-              Patients
-            </a>
-            <a href="#professionals" className="hover:text-foreground">
-              Professionals
-            </a>
-            <a href="#trust" className="hover:text-foreground">
-              Trust
-            </a>
+            <a href="#patients" className="hover:text-foreground">Patients</a>
+            <a href="#professionals" className="hover:text-foreground">Professionals</a>
+            <a href="#trust" className="hover:text-foreground">Trust</a>
+            <Link href="/blog" className="hover:text-foreground">Blog</Link>
           </div>
           <div className="flex items-center gap-2">
             <Button asChild variant="ghost" size="sm">
@@ -124,7 +119,7 @@ export function LandingPage() {
               Verified mental health marketplace
             </Badge>
             <h1 className="max-w-4xl text-5xl font-semibold tracking-normal text-balance md:text-7xl">
-              Aura Care
+              Psyspace
             </h1>
             <p className="mt-5 max-w-2xl text-xl leading-8 text-foreground md:text-2xl">
               A professional marketplace for booking paid sessions with verified psychiatrists and psychologists.
@@ -271,7 +266,7 @@ export function LandingPage() {
 
       <footer className="border-t border-border px-4 py-8 md:px-6">
         <div className="mx-auto flex max-w-7xl flex-col justify-between gap-3 text-sm text-muted-foreground md:flex-row">
-          <p>Aura Care is a booking platform for mental health sessions, not emergency care.</p>
+          <p>Psyspace is a booking platform for mental health sessions, not emergency care.</p>
           <p>In crisis, call local emergency services or a crisis line immediately.</p>
         </div>
       </footer>

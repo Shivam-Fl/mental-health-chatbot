@@ -148,7 +148,7 @@ function formatDateTime(session: Session) {
 function makeMeetingUrl(booking: Booking) {
   return (
     booking.professional_sessions?.meeting_url ||
-    `https://meet.jit.si/aura-care-${booking.session_id}-${booking.id}`.replace(/[^a-zA-Z0-9:/.-]/g, "")
+    `https://meet.jit.si/psyspace-${booking.session_id}-${booking.id}`.replace(/[^a-zA-Z0-9:/.-]/g, "")
   )
 }
 
@@ -544,7 +544,7 @@ export function MarketplaceHome({ user }: { user: MarketplaceUser }) {
               <HeartHandshake className="size-5" />
             </div>
             <div>
-              <p className="text-lg font-semibold leading-none">Aura Care</p>
+              <p className="text-lg font-semibold leading-none">Psyspace</p>
               <p className="text-xs text-muted-foreground">Dashboard</p>
             </div>
           </Link>
@@ -1166,7 +1166,7 @@ export function MarketplaceHome({ user }: { user: MarketplaceUser }) {
 
       <footer className="mx-auto max-w-7xl px-4 py-8 text-sm text-muted-foreground md:px-6">
         <div className="flex flex-col justify-between gap-3 border-t border-border pt-6 md:flex-row">
-          <p>Aura Care supports professional mental health booking and AI-guided wellness.</p>
+          <p>Psyspace supports professional mental health booking and AI-guided wellness.</p>
           <p>In crisis, call 988 in the US or your local emergency number immediately.</p>
         </div>
       </footer>

@@ -2,6 +2,7 @@ import { redirect } from "next/navigation"
 
 import { PatientDashboard } from "@/components/marketplace/patient-dashboard"
 import { DashboardShell } from "@/components/marketplace/dashboard-shell"
+import { FloatingChatButton } from "@/components/marketplace/floating-chat-button"
 import { createClient } from "@/lib/supabase/server"
 
 export default async function PatientDashboardPage() {
@@ -17,14 +18,19 @@ export default async function PatientDashboardPage() {
 
   if (role !== "patient") redirect("/dashboard")
 
+  const name = String(profile?.full_name ?? user.user_metadata?.full_name ?? "Patient")
+
   return (
-    <DashboardShell
-      role="patient"
-      name={String(profile?.full_name ?? user.user_metadata?.full_name ?? "Patient")}
-      title="Patient Dashboard"
-      description="Browse verified professionals, book paid sessions, join appointments, and leave feedback after care."
-    >
-      <PatientDashboard user={{ id: user.id, email: user.email ?? "", name: String(profile?.full_name ?? user.user_metadata?.full_name ?? "Patient") }} />
-    </DashboardShell>
+    <>
+      <DashboardShell
+        role="patient"
+        name={name}
+        title="Find Your Care"
+        description="Browse verified psychiatrists and psychologists, book paid sessions, and manage your mental health journey."
+      >
+        <PatientDashboard user={{ id: user.id, email: user.email ?? "", name }} />
+      </DashboardShell>
+      <FloatingChatButton />
+    </>
   )
 }

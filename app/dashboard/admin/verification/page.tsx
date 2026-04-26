@@ -6,7 +6,6 @@ import { getDashboardUser } from "@/lib/marketplace/dashboard-user"
 
 export default async function AdminVerificationPage() {
   const user = await getDashboardUser()
-
   if (user.role !== "admin") redirect("/dashboard")
 
   return (
@@ -14,7 +13,7 @@ export default async function AdminVerificationPage() {
       role="admin"
       name={user.name}
       title="Verification Queue"
-      description="Review professional documents and approve or reject psychiatrists and psychologists before they accept sessions."
+      description="Review professional documents and approve, reject, or revoke psychiatrists and psychologists."
     >
       <AdminVerification />
     </DashboardShell>

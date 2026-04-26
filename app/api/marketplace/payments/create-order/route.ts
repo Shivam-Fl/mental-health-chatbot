@@ -125,7 +125,7 @@ export async function POST(request: Request) {
     orderId: order.id,
     amount: order.amount,
     currency: order.currency,
-    name: "Aura Care",
+    name: "Psyspace",
     description: session.focus,
   })
 }
