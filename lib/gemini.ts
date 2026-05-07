@@ -26,7 +26,7 @@ function getApiKey(): string {
   return apiKey
 }
 
-const DEFAULT_MODEL = "gemini-2.5-flash"
+const DEFAULT_MODEL = "gemini-2.0-flash"
 
 export function getModelName(): string {
   return process.env.GEMINI_MODEL || DEFAULT_MODEL
@@ -113,6 +113,15 @@ export async function generateContent(
 
   if (!res.ok) {
     const errorBody = await res.text()
+    // If the requested model is not found, retry once with the stable default model.
+    // The `model !== DEFAULT_MODEL` guard prevents infinite recursion: if the
+    // default model itself returns 404 the error is thrown normally.
+    if (res.status === 404 && model !== DEFAULT_MODEL) {
+      console.warn(
+        `Model "${model}" not found (404). Retrying with default model "${DEFAULT_MODEL}".`,
+      )
+      return generateContent(DEFAULT_MODEL, request)
+    }
     throw new Error(`Vertex AI API error (${res.status}): ${errorBody}`)
   }
 
